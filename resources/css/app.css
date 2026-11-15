@@ -1,0 +1,78 @@
+@import url('https://fonts.googleapis.com/css2?family=JetBrains+Mono:wght@400;500;600;700&family=Plus+Jakarta+Sans:wght@300;400;500;600;700;800&display=swap');
+@import 'tailwindcss';
+@import '../../vendor/livewire/flux/dist/flux.css';
+
+@source '../views';
+@source '../../vendor/laravel/framework/src/Illuminate/Pagination/resources/views/*.blade.php';
+
+@theme {
+    --font-sans: 'Plus Jakarta Sans', system-ui, -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+    --font-mono: 'JetBrains Mono', ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, monospace;
+
+    --color-dark-bg: #0D0E12;
+    --color-dark-surface: #17181E;
+    --color-dark-card: #17181E;
+    --color-dark-hover: #1F222B;
+    --color-dark-border: #262C37;
+    --color-dark-border-subtle: #1E232D;
+
+    --color-brand-blue: #5865F2;
+    --color-brand-blue-hover: #4752C4;
+    --color-brand-indigo: #4F46E5;
+    --color-brand-green: #00E676;
+    --color-brand-green-muted: rgba(0, 230, 118, 0.15);
+}
+
+:root {
+    color-scheme: dark;
+}
+
+body {
+    background-color: #0D0E12;
+    color: #F3F4F6;
+    font-family: 'Plus Jakarta Sans', -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+    -webkit-font-smoothing: antialiased;
+    -moz-osx-font-smoothing: grayscale;
+}
+
+.font-mono-numbers {
+    font-family: 'JetBrains Mono', monospace;
+    font-variant-numeric: tabular-nums;
+}
+
+/* Custom scrollbars for dark UI */
+::-webkit-scrollbar {
+    width: 6px;
+    height: 6px;
+}
+
+::-webkit-scrollbar-track {
+    background: #0D0E12;
+}
+
+::-webkit-scrollbar-thumb {
+    background: #262C37;
+    border-radius: 9999px;
+}
+
+::-webkit-scrollbar-thumb:hover {
+    background: #374151;
+}
+
+/* Glow effects */
+.glow-blue {
+    box-shadow: 0 4px 20px -2px rgba(88, 101, 242, 0.35);
+}
+
+.glow-blue-lg {
+    box-shadow: 0 8px 30px -4px rgba(88, 101, 242, 0.45);
+}
+
+.glow-green {
+    box-shadow: 0 0 16px rgba(0, 230, 118, 0.3);
+}
+
+.modal-backdrop-blur {
+    backdrop-filter: blur(8px);
+    background-color: rgba(13, 14, 18, 0.75);
+}
