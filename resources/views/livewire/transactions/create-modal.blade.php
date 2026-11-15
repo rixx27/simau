@@ -40,27 +40,27 @@
 
                 <!-- Scrollable Body -->
                 <div class="px-5 py-4 overflow-y-auto space-y-4">
-                    <!-- Mode Switcher -->
+                    <!-- Mode Switcher: Pengeluaran Harian vs Pengeluaran Trip -->
                     <div class="bg-[#0D0E12] p-1.5 rounded-2xl flex border border-[#262C37]/80 gap-1.5">
                         <button
                             type="button"
-                            wire:click="setMode('expense')"
-                            class="flex-1 py-2.5 px-3 rounded-xl text-xs font-semibold flex items-center justify-center gap-1.5 transition-all duration-200 {{ $mode === 'expense' ? 'bg-[#5865F2] text-white shadow-lg shadow-[#5865F2]/30' : 'text-[#9CA3AF] hover:text-white' }}"
+                            wire:click="setMode('daily')"
+                            class="flex-1 py-2.5 px-3 rounded-xl text-xs font-semibold flex items-center justify-center gap-1.5 transition-all duration-200 {{ $mode === 'daily' ? 'bg-[#5865F2] text-white shadow-lg shadow-[#5865F2]/30' : 'text-[#9CA3AF] hover:text-white' }}"
                         >
                             <svg class="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke-width="2.5" stroke="currentColor">
-                                <path stroke-linecap="round" stroke-linejoin="round" d="M19.5 13.5 12 21m0 0-7.5-7.5M12 21V3" />
+                                <path stroke-linecap="round" stroke-linejoin="round" d="M12 6v6h4.5m4.5 0a9 9 0 1 1-18 0 9 9 0 0 1 18 0Z" />
                             </svg>
-                            <span>Pengeluaran</span>
+                            <span>Pengeluaran Harian</span>
                         </button>
                         <button
                             type="button"
-                            wire:click="setMode('saving')"
-                            class="flex-1 py-2.5 px-3 rounded-xl text-xs font-semibold flex items-center justify-center gap-1.5 transition-all duration-200 {{ $mode === 'saving' ? 'bg-[#5865F2] text-white shadow-lg shadow-[#5865F2]/30' : 'text-[#9CA3AF] hover:text-white' }}"
+                            wire:click="setMode('trip')"
+                            class="flex-1 py-2.5 px-3 rounded-xl text-xs font-semibold flex items-center justify-center gap-1.5 transition-all duration-200 {{ $mode === 'trip' ? 'bg-[#5865F2] text-white shadow-lg shadow-[#5865F2]/30' : 'text-[#9CA3AF] hover:text-white' }}"
                         >
                             <svg class="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke-width="2" stroke="currentColor">
-                                <path stroke-linecap="round" stroke-linejoin="round" d="M12 6v12m-3-2.818.879.659c1.171.879 3.07.879 4.242 0 1.172-.879 1.172-2.303 0-3.182C13.536 12.219 12.768 12 12 12c-.725 0-1.45-.22-2.003-.659-1.106-.879-1.106-2.303 0-3.182s2.9-.879 4.006 0l.415.33M21 12a9 9 0 1 1-18 0 9 9 0 0 1 18 0Z" />
+                                <path stroke-linecap="round" stroke-linejoin="round" d="M6 12 3.269 3.125A59.769 59.769 0 0 1 21.485 12 59.768 59.768 0 0 1 3.27 20.875L5.999 12Zm0 0h7.5" />
                             </svg>
-                            <span>Nabung Trip</span>
+                            <span>Pengeluaran Trip</span>
                         </button>
                     </div>
 
@@ -98,7 +98,7 @@
                             </button>
                             <button
                                 type="button"
-                                wire:click="addAmount(5000)"
+                                wire:click="addAmount(50000)"
                                 class="px-3 py-1.5 rounded-lg bg-[#17181E] hover:bg-[#262C37] text-xs font-medium text-[#9CA3AF] hover:text-white transition-colors cursor-pointer"
                             >
                                 +Rp 50.000
@@ -113,118 +113,156 @@
                         </div>
                     </div>
 
-                    <!-- Category Grid (Only in Expense mode) -->
-                    @if($mode === 'expense')
-                        <div>
-                            <div class="flex items-center justify-between mb-2">
-                                <span class="text-xs font-semibold text-white">Pilih Kategori</span>
-                                <span class="text-[11px] text-[#9CA3AF]">Wajib dipilih</span>
-                            </div>
+                    <!-- Destination Trip Selector (Only in Trip Mode) -->
+                    @if($mode === 'trip')
+                        <div class="bg-[#0D0E12] border border-[#5865F2]/40 rounded-2xl p-3.5 space-y-1.5">
+                            <label class="block text-xs font-semibold text-white flex items-center gap-1.5">
+                                <svg class="w-4 h-4 text-[#5865F2]" fill="none" viewBox="0 0 24 24" stroke-width="2" stroke="currentColor">
+                                    <path stroke-linecap="round" stroke-linejoin="round" d="M15 10.5a3 3 0 1 1-6 0 3 3 0 0 1 6 0Z" />
+                                    <path stroke-linecap="round" stroke-linejoin="round" d="M19.5 10.5c0 7.142-7.5 11.25-7.5 11.25S4.5 17.642 4.5 10.5a7.5 7.5 0 1 1 15 0Z" />
+                                </svg>
+                                <span>Pilih Destinasi Liburan / Trip</span>
+                            </label>
 
-                            <div class="grid grid-cols-3 gap-2.5">
-                                @foreach($categories as $cat)
-                                    @php
-                                        $isSelected = $selectedCategoryId === $cat->id;
-                                    @endphp
-                                    <button
-                                        type="button"
-                                        wire:click="selectCategory({{ $cat->id }})"
-                                        class="relative flex flex-col items-center justify-center p-3 rounded-2xl border transition-all duration-150 cursor-pointer {{ $isSelected ? 'bg-[#5865F2]/15 border-[#5865F2] ring-1 ring-[#5865F2]' : 'bg-[#0D0E12] border-[#262C37] hover:border-[#5865F2]/40 hover:bg-[#1E2028]' }}"
-                                    >
-                                        @if($isSelected)
-                                            <span class="absolute top-2 right-2 w-2 h-2 rounded-full bg-[#5865F2]"></span>
-                                        @endif
-
-                                        <div class="w-9 h-9 rounded-xl flex items-center justify-center mb-1.5" style="background-color: {{ $cat->color }}20; color: {{ $cat->color }};">
-                                            @if($cat->icon === 'utensils')
-                                                <svg class="w-5 h-5" fill="none" viewBox="0 0 24 24" stroke-width="2" stroke="currentColor">
-                                                    <path stroke-linecap="round" stroke-linejoin="round" d="m20.25 7.5-.625 10.632a2.25 2.25 0 0 1-2.247 2.118H6.622a2.25 2.25 0 0 1-2.247-2.118L3.75 7.5m6 4.125 2.25 2.25m0 0 2.25 2.25M12 13.875l2.25-2.25M12 13.875l-2.25 2.25M3.375 7.5h17.25c.621 0 1.125-.504 1.125-1.125v-1.5c0-.621-.504-1.125-1.125-1.125H3.375c-.621 0-1.125.504-1.125 1.125v1.5c0 .621.504 1.125 1.125 1.125Z" />
-                                                </svg>
-                                            @elseif($cat->icon === 'car')
-                                                <svg class="w-5 h-5" fill="none" viewBox="0 0 24 24" stroke-width="2" stroke="currentColor">
-                                                    <path stroke-linecap="round" stroke-linejoin="round" d="M8.25 18.75a1.5 1.5 0 0 1-3 0m3 0a1.5 1.5 0 0 0-3 0m3 0h6m-9 0H3.375a1.125 1.125 0 0 1-1.125-1.125V14.25m17.25 4.5a1.5 1.5 0 0 1-3 0m3 0a1.5 1.5 0 0 0-3 0m3 0h1.125c.621 0 1.129-.504 1.09-1.124a17.902 17.902 0 0 0-3.213-9.193 2.056 2.056 0 0 0-1.58-.86H14.25M16.5 18.75h-2.25m0-11.25V3.75m0 3.75H7.5m9 0h2.25" />
-                                                </svg>
-                                            @elseif($cat->icon === 'bed')
-                                                <svg class="w-5 h-5" fill="none" viewBox="0 0 24 24" stroke-width="2" stroke="currentColor">
-                                                    <path stroke-linecap="round" stroke-linejoin="round" d="M20.25 14.15v4.25c0 .414-.336.75-.75.75h-1.5a.75.75 0 0 1-.75-.75v-1.5H6.75v1.5a.75.75 0 0 1-.75.75h-1.5a.75.75 0 0 1-.75-.75v-4.25m16.5 0a3.75 3.75 0 0 0-3.75-3.75H12m8.25 3.75H3.75m0 0a3.75 3.75 0 0 1 3.75-3.75h1.5m-5.25 3.75v-8.5c0-.414.336-.75.75-.75h1.5c.414 0 .75.336.75.75v4.25" />
-                                                </svg>
-                                            @elseif($cat->icon === 'ticket')
-                                                <svg class="w-5 h-5" fill="none" viewBox="0 0 24 24" stroke-width="2" stroke="currentColor">
-                                                    <path stroke-linecap="round" stroke-linejoin="round" d="M16.5 6v.75m0 3v.75m0 3v.75m0 3V18m-9-5.25h5.25M7.5 15h3M3.375 5.25c-.621 0-1.125.504-1.125 1.125v3.026a2.999 2.999 0 0 1 0 5.198v3.026c0 .621.504 1.125 1.125 1.125h17.25c.621 0 1.125-.504 1.125-1.125v-3.026a2.999 2.999 0 0 1 0-5.198V6.375c0-.621-.504-1.125-1.125-1.125H3.375Z" />
-                                                </svg>
-                                            @elseif($cat->icon === 'coffee')
-                                                <svg class="w-5 h-5" fill="none" viewBox="0 0 24 24" stroke-width="2" stroke="currentColor">
-                                                    <path stroke-linecap="round" stroke-linejoin="round" d="M12 8.25v-1.5m0 1.5a3.75 3.75 0 0 0 3.75 3.75h1.5a3.75 3.75 0 0 0 3.75-3.75v-1.5m-9 1.5a3.75 3.75 0 0 1-3.75 3.75h-1.5A3.75 3.75 0 0 1 3 8.25v-1.5m9 7.5v4.5m0 0H8.25m3.75 0h3.75" />
-                                                </svg>
-                                            @else
-                                                <svg class="w-5 h-5" fill="none" viewBox="0 0 24 24" stroke-width="2" stroke="currentColor">
-                                                    <path stroke-linecap="round" stroke-linejoin="round" d="M9.568 3H5.25A2.25 2.25 0 0 0 3 5.25v4.318c0 .597.237 1.17.659 1.591l9.581 9.581c.699.699 1.78.872 2.607.33a18.095 18.095 0 0 0 5.223-5.223c.542-.827.369-1.908-.33-2.607L11.16 3.66A2.25 2.25 0 0 0 9.568 3Z" />
-                                                </svg>
-                                            @endif
-                                        </div>
-                                        <span class="text-xs font-medium text-white truncate max-w-full">{{ $cat->name }}</span>
-                                    </button>
-                                @endforeach
-
-                                <!-- Add New Category Card -->
-                                <button
-                                    type="button"
-                                    wire:click="toggleCreateCategory"
-                                    class="flex flex-col items-center justify-center p-3 rounded-2xl border border-dashed border-[#262C37] hover:border-[#5865F2] hover:bg-[#1E2028] transition-all duration-150 cursor-pointer"
+                            <div class="relative">
+                                <select
+                                    wire:model.live="selectedTripId"
+                                    class="w-full bg-[#17181E] border border-[#262C37] rounded-xl p-2.5 text-xs text-white appearance-none focus:outline-none focus:border-[#5865F2] pr-10 cursor-pointer"
                                 >
-                                    <div class="w-9 h-9 rounded-xl bg-[#17181E] border border-[#262C37] flex items-center justify-center mb-1.5 text-[#9CA3AF]">
-                                        <svg class="w-5 h-5" fill="none" viewBox="0 0 24 24" stroke-width="2" stroke="currentColor">
-                                            <path stroke-linecap="round" stroke-linejoin="round" d="M12 4.5v15m7.5-7.5h-15" />
-                                        </svg>
-                                    </div>
-                                    <span class="text-xs font-medium text-[#9CA3AF]">+ Kategori</span>
-                                </button>
+                                    @foreach($trips as $t)
+                                        <option value="{{ $t->id }}">
+                                            {{ $t->name }} ({{ $t->destination }} &bull; {{ $t->status_label }})
+                                        </option>
+                                    @endforeach
+                                </select>
+                                <div class="absolute inset-y-0 right-0 flex items-center pr-3 pointer-events-none text-[#9CA3AF]">
+                                    <svg class="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke-width="2" stroke="currentColor">
+                                        <path stroke-linecap="round" stroke-linejoin="round" d="m19.5 8.25-7.5 7.5-7.5-7.5" />
+                                    </svg>
+                                </div>
                             </div>
-
-                            <!-- Inline category creation input -->
-                            @if($isCreatingCategory)
-                                <div class="mt-3 p-3 rounded-2xl bg-[#0D0E12] border border-[#5865F2]/40 space-y-2.5">
-                                    <div class="flex items-center justify-between">
-                                        <span class="text-xs font-semibold text-white">Buat Kategori Baru</span>
-                                        <button type="button" wire:click="toggleCreateCategory" class="text-xs text-[#9CA3AF] hover:text-white">&times;</button>
-                                    </div>
-                                    <div class="flex items-center gap-2">
-                                        <input
-                                            type="text"
-                                            wire:model="newCategoryName"
-                                            placeholder="Nama kategori..."
-                                            class="flex-1 bg-[#17181E] border border-[#262C37] rounded-xl px-3 py-1.5 text-xs text-white placeholder-[#9CA3AF] focus:outline-none focus:border-[#5865F2]"
-                                        />
-                                        <input
-                                            type="color"
-                                            wire:model="newCategoryColor"
-                                            class="w-8 h-8 rounded-lg bg-transparent border-0 cursor-pointer"
-                                            title="Pilih Warna"
-                                        />
-                                        <button
-                                            type="button"
-                                            wire:click="saveNewCategory"
-                                            class="px-3 py-1.5 rounded-xl bg-[#5865F2] text-white text-xs font-semibold hover:bg-[#4752C4] transition-colors cursor-pointer"
-                                        >
-                                            Simpan
-                                        </button>
-                                    </div>
-                                    @error('newCategoryName')
-                                        <p class="text-[11px] text-red-400">{{ $message }}</p>
-                                    @enderror
+                            @if($selectedTrip)
+                                <div class="flex items-center justify-between text-[11px] text-[#9CA3AF] px-1 pt-1">
+                                    <span>Anggaran: <b class="text-white">{{ $selectedTrip->formatted_budget }}</b></span>
+                                    <span>Terpakai: <b class="text-[#00E676]">{{ $selectedTrip->formatted_total_spent }}</b></span>
                                 </div>
                             @endif
-
-                            @error('selectedCategoryId')
+                            @error('selectedTripId')
                                 <p class="text-xs text-red-400 mt-1">{{ $message }}</p>
                             @enderror
                         </div>
                     @endif
 
+                    <!-- Category Grid -->
+                    <div>
+                        <div class="flex items-center justify-between mb-2">
+                            <span class="text-xs font-semibold text-white">Pilih Kategori</span>
+                            <span class="text-[11px] text-[#9CA3AF]">Wajib dipilih</span>
+                        </div>
+
+                        <div class="grid grid-cols-3 gap-2.5">
+                            @foreach($categories as $cat)
+                                @php
+                                    $isSelected = $selectedCategoryId === $cat->id;
+                                @endphp
+                                <button
+                                    type="button"
+                                    wire:click="selectCategory({{ $cat->id }})"
+                                    class="relative flex flex-col items-center justify-center p-3 rounded-2xl border transition-all duration-150 cursor-pointer {{ $isSelected ? 'bg-[#5865F2]/15 border-[#5865F2] ring-1 ring-[#5865F2]' : 'bg-[#0D0E12] border-[#262C37] hover:border-[#5865F2]/40 hover:bg-[#1E2028]' }}"
+                                >
+                                    @if($isSelected)
+                                        <span class="absolute top-2 right-2 w-2 h-2 rounded-full bg-[#5865F2]"></span>
+                                    @endif
+
+                                    <div class="w-9 h-9 rounded-xl flex items-center justify-center mb-1.5" style="background-color: {{ $cat->color }}20; color: {{ $cat->color }};">
+                                        @if($cat->icon === 'utensils')
+                                            <svg class="w-5 h-5" fill="none" viewBox="0 0 24 24" stroke-width="2" stroke="currentColor">
+                                                <path stroke-linecap="round" stroke-linejoin="round" d="m20.25 7.5-.625 10.632a2.25 2.25 0 0 1-2.247 2.118H6.622a2.25 2.25 0 0 1-2.247-2.118L3.75 7.5m6 4.125 2.25 2.25m0 0 2.25 2.25M12 13.875l2.25-2.25M12 13.875l-2.25 2.25M3.375 7.5h17.25c.621 0 1.125-.504 1.125-1.125v-1.5c0-.621-.504-1.125-1.125-1.125H3.375c-.621 0-1.125.504-1.125 1.125v1.5c0 .621.504 1.125 1.125 1.125Z" />
+                                            </svg>
+                                        @elseif($cat->icon === 'car')
+                                            <svg class="w-5 h-5" fill="none" viewBox="0 0 24 24" stroke-width="2" stroke="currentColor">
+                                                <path stroke-linecap="round" stroke-linejoin="round" d="M8.25 18.75a1.5 1.5 0 0 1-3 0m3 0a1.5 1.5 0 0 0-3 0m3 0h6m-9 0H3.375a1.125 1.125 0 0 1-1.125-1.125V14.25m17.25 4.5a1.5 1.5 0 0 1-3 0m3 0a1.5 1.5 0 0 0-3 0m3 0h1.125c.621 0 1.129-.504 1.09-1.124a17.902 17.902 0 0 0-3.213-9.193 2.056 2.056 0 0 0-1.58-.86H14.25M16.5 18.75h-2.25m0-11.25V3.75m0 3.75H7.5m9 0h2.25" />
+                                            </svg>
+                                        @elseif($cat->icon === 'bed')
+                                            <svg class="w-5 h-5" fill="none" viewBox="0 0 24 24" stroke-width="2" stroke="currentColor">
+                                                <path stroke-linecap="round" stroke-linejoin="round" d="M20.25 14.15v4.25c0 .414-.336.75-.75.75h-1.5a.75.75 0 0 1-.75-.75v-1.5H6.75v1.5a.75.75 0 0 1-.75.75h-1.5a.75.75 0 0 1-.75-.75v-4.25m16.5 0a3.75 3.75 0 0 0-3.75-3.75H12m8.25 3.75H3.75m0 0a3.75 3.75 0 0 1 3.75-3.75h1.5m-5.25 3.75v-8.5c0-.414.336-.75.75-.75h1.5c.414 0 .75.336.75.75v4.25" />
+                                            </svg>
+                                        @elseif($cat->icon === 'ticket')
+                                            <svg class="w-5 h-5" fill="none" viewBox="0 0 24 24" stroke-width="2" stroke="currentColor">
+                                                <path stroke-linecap="round" stroke-linejoin="round" d="M16.5 6v.75m0 3v.75m0 3v.75m0 3V18m-9-5.25h5.25M7.5 15h3M3.375 5.25c-.621 0-1.125.504-1.125 1.125v3.026a2.999 2.999 0 0 1 0 5.198v3.026c0 .621.504 1.125 1.125 1.125h17.25c.621 0 1.125-.504 1.125-1.125v-3.026a2.999 2.999 0 0 1 0-5.198V6.375c0-.621-.504-1.125-1.125-1.125H3.375Z" />
+                                            </svg>
+                                        @elseif($cat->icon === 'coffee')
+                                            <svg class="w-5 h-5" fill="none" viewBox="0 0 24 24" stroke-width="2" stroke="currentColor">
+                                                <path stroke-linecap="round" stroke-linejoin="round" d="M12 8.25v-1.5m0 1.5a3.75 3.75 0 0 0 3.75 3.75h1.5a3.75 3.75 0 0 0 3.75-3.75v-1.5m-9 1.5a3.75 3.75 0 0 1-3.75 3.75h-1.5A3.75 3.75 0 0 1 3 8.25v-1.5m9 7.5v4.5m0 0H8.25m3.75 0h3.75" />
+                                            </svg>
+                                        @else
+                                            <svg class="w-5 h-5" fill="none" viewBox="0 0 24 24" stroke-width="2" stroke="currentColor">
+                                                <path stroke-linecap="round" stroke-linejoin="round" d="M9.568 3H5.25A2.25 2.25 0 0 0 3 5.25v4.318c0 .597.237 1.17.659 1.591l9.581 9.581c.699.699 1.78.872 2.607.33a18.095 18.095 0 0 0 5.223-5.223c.542-.827.369-1.908-.33-2.607L11.16 3.66A2.25 2.25 0 0 0 9.568 3Z" />
+                                            </svg>
+                                        @endif
+                                    </div>
+                                    <span class="text-xs font-medium text-white truncate max-w-full">{{ $cat->name }}</span>
+                                </button>
+                            @endforeach
+
+                            <!-- Add New Category Card -->
+                            <button
+                                type="button"
+                                wire:click="toggleCreateCategory"
+                                class="flex flex-col items-center justify-center p-3 rounded-2xl border border-dashed border-[#262C37] hover:border-[#5865F2] hover:bg-[#1E2028] transition-all duration-150 cursor-pointer"
+                            >
+                                <div class="w-9 h-9 rounded-xl bg-[#17181E] border border-[#262C37] flex items-center justify-center mb-1.5 text-[#9CA3AF]">
+                                    <svg class="w-5 h-5" fill="none" viewBox="0 0 24 24" stroke-width="2" stroke="currentColor">
+                                        <path stroke-linecap="round" stroke-linejoin="round" d="M12 4.5v15m7.5-7.5h-15" />
+                                    </svg>
+                                </div>
+                                <span class="text-xs font-medium text-[#9CA3AF]">+ Kategori</span>
+                            </button>
+                        </div>
+
+                        <!-- Inline category creation input -->
+                        @if($isCreatingCategory)
+                            <div class="mt-3 p-3 rounded-2xl bg-[#0D0E12] border border-[#5865F2]/40 space-y-2.5">
+                                <div class="flex items-center justify-between">
+                                    <span class="text-xs font-semibold text-white">Buat Kategori Baru</span>
+                                    <button type="button" wire:click="toggleCreateCategory" class="text-xs text-[#9CA3AF] hover:text-white">&times;</button>
+                                </div>
+                                <div class="flex items-center gap-2">
+                                    <input
+                                        type="text"
+                                        wire:model="newCategoryName"
+                                        placeholder="Nama kategori..."
+                                        class="flex-1 bg-[#17181E] border border-[#262C37] rounded-xl px-3 py-1.5 text-xs text-white placeholder-[#9CA3AF] focus:outline-none focus:border-[#5865F2]"
+                                    />
+                                    <input
+                                        type="color"
+                                        wire:model="newCategoryColor"
+                                        class="w-8 h-8 rounded-lg bg-transparent border-0 cursor-pointer"
+                                        title="Pilih Warna"
+                                    />
+                                    <button
+                                        type="button"
+                                        wire:click="saveNewCategory"
+                                        class="px-3 py-1.5 rounded-xl bg-[#5865F2] text-white text-xs font-semibold hover:bg-[#4752C4] transition-colors cursor-pointer"
+                                    >
+                                        Simpan
+                                    </button>
+                                </div>
+                                @error('newCategoryName')
+                                    <p class="text-[11px] text-red-400">{{ $message }}</p>
+                                @enderror
+                            </div>
+                        @endif
+
+                        @error('selectedCategoryId')
+                            <p class="text-xs text-red-400 mt-1">{{ $message }}</p>
+                        @enderror
+                    </div>
+
                     <!-- Sumber Dana Transaksi -->
                     <div>
                         <label class="block text-xs font-semibold text-white mb-1.5">
-                            {{ $mode === 'saving' ? 'Sumber Dana (Rekening Utama)' : 'Sumber Dana Transaksi' }}
+                            Sumber Dana (Kas / Dompet)
                         </label>
                         <div class="relative">
                             <select
@@ -233,7 +271,7 @@
                             >
                                 @foreach($wallets as $wallet)
                                     <option value="{{ $wallet->id }}">
-                                        {{ $wallet->name }} (Saldo: {{ $wallet->formatted_balance }} • {{ $wallet->account_label ?? ucfirst($wallet->type) }})
+                                        {{ $wallet->name }} (Saldo: {{ $wallet->formatted_balance }} &bull; {{ $wallet->account_label ?? ucfirst($wallet->type) }})
                                     </option>
                                 @endforeach
                             </select>
@@ -245,47 +283,18 @@
                         </div>
                     </div>
 
-                    <!-- Destination Wallet (Only for Nabung Trip / Saving mode) -->
-                    @if($mode === 'saving')
-                        <div>
-                            <label class="block text-xs font-semibold text-white mb-1.5">
-                                Dompet Tujuan (Pundi Liburan / Tabungan)
-                            </label>
-                            <div class="relative">
-                                <select
-                                    wire:model.live="destinationWalletId"
-                                    class="w-full bg-[#0D0E12] border border-[#262C37] rounded-2xl p-3 text-xs text-white appearance-none focus:outline-none focus:border-[#5865F2] pr-10 cursor-pointer"
-                                >
-                                    @foreach($wallets->where('id', '!=', $selectedWalletId) as $wallet)
-                                        <option value="{{ $wallet->id }}">
-                                            {{ $wallet->name }} (Saldo: {{ $wallet->formatted_balance }} • {{ $wallet->account_label ?? ucfirst($wallet->type) }})
-                                        </option>
-                                    @endforeach
-                                </select>
-                                <div class="absolute inset-y-0 right-0 flex items-center pr-3 pointer-events-none text-[#9CA3AF]">
-                                    <svg class="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke-width="2" stroke="currentColor">
-                                        <path stroke-linecap="round" stroke-linejoin="round" d="m19.5 8.25-7.5 7.5-7.5-7.5" />
-                                    </svg>
-                                </div>
-                            </div>
-                            @error('destinationWalletId')
-                                <p class="text-xs text-red-400 mt-1">{{ $message }}</p>
-                            @enderror
-                        </div>
-                    @endif
-
                     <!-- Catatan Transaksi -->
                     <div class="bg-[#0D0E12] border border-[#262C37] rounded-2xl p-3">
                         <div class="flex items-center gap-2 mb-1">
                             <svg class="w-4 h-4 text-[#9CA3AF]" fill="none" viewBox="0 0 24 24" stroke-width="2" stroke="currentColor">
                                 <path stroke-linecap="round" stroke-linejoin="round" d="m16.862 4.487 1.687-1.688a1.875 1.875 0 1 1 2.652 2.652L6.832 19.82a4.5 4.5 0 0 1-1.897 1.13l-2.685.8.8-2.685a4.5 4.5 0 0 1 1.13-1.897L16.863 4.487Zm0 0L19.5 7.125" />
                             </svg>
-                            <span class="text-[11px] font-semibold text-[#9CA3AF] uppercase tracking-wider">Catatan Transaksi</span>
+                            <span class="text-[11px] font-semibold text-[#9CA3AF] uppercase tracking-wider">Judul / Catatan Transaksi</span>
                         </div>
                         <input
                             type="text"
                             wire:model="title"
-                            placeholder="Contoh: GrabCar ke Malioboro..."
+                            placeholder="Contoh: Tiket Kereta, Gudeg Yu Djum, GrabCar..."
                             class="w-full bg-transparent border-0 text-sm text-white focus:outline-none focus:ring-0 p-0"
                         />
                         @error('title')
@@ -344,7 +353,7 @@
                         <svg class="w-3.5 h-3.5 text-[#00E676]" fill="none" viewBox="0 0 24 24" stroke-width="2.5" stroke="currentColor">
                             <path stroke-linecap="round" stroke-linejoin="round" d="m4.5 12.75 6 6 9-13.5" />
                         </svg>
-                        <span>Sinkronisasi otomatis dengan ledger SIMAU Cloud</span>
+                        <span>Tersimpan aman di buku kas SIMAU Ledger</span>
                     </div>
                 </div>
             </div>

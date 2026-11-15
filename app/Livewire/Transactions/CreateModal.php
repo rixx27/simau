@@ -4,6 +4,7 @@ namespace App\Livewire\Transactions;
 
 use App\Models\Category;
 use App\Models\Transaction;
+use App\Models\Trip;
 use App\Models\User;
 use App\Models\Wallet;
 use Carbon\Carbon;
@@ -17,11 +18,11 @@ class CreateModal extends Component
     public bool $isOpen = false;
 
     // Form fields
-    public string $mode = 'expense'; // 'expense' or 'saving'
+    public string $mode = 'daily'; // 'daily' (Pengeluaran Harian) or 'trip' (Pengeluaran Trip)
     public ?int $amount = 45000;
     public ?int $selectedCategoryId = null;
     public ?int $selectedWalletId = null;
-    public ?int $destinationWalletId = null;
+    public ?int $selectedTripId = null;
     public string $title = '';
     public string $note = '';
     public string $transactionDate = '';
@@ -57,12 +58,14 @@ class CreateModal extends Component
             $this->selectedWalletId = $defaultWallet?->id;
         }
 
-        // Set default destination wallet for trip saving
-        if (!$this->destinationWalletId) {
-            $tripWallet = Wallet::where('user_id', $user->id)
-                ->where('type', 'trip')
-                ->first();
-            $this->destinationWalletId = $tripWallet?->id;
+        // Set default trip (active trip first)
+        if (!$this->selectedTripId) {
+            $activeTrip = Trip::where('user_id', $user->id)
+                ->where('status', 'active')
+                ->latest()
+                ->first() ?? Trip::where('user_id', $user->id)->latest()->first();
+
+            $this->selectedTripId = $activeTrip?->id;
         }
 
         // Set default category
@@ -74,23 +77,24 @@ class CreateModal extends Component
     }
 
     #[On('open-transaction-modal')]
-    public function openModal(string $mode = 'expense', ?int $walletId = null, ?int $destinationId = null): void
+    public function openModal(string $mode = 'daily', ?int $walletId = null, ?int $tripId = null): void
     {
-        $this->mode = $mode;
+        $this->mode = $mode === 'expense' ? 'daily' : ($mode === 'trip' || $mode === 'saving' ? 'trip' : $mode);
         $this->loadDefaults();
 
         if ($walletId) {
             $this->selectedWalletId = $walletId;
         }
-        if ($destinationId) {
-            $this->destinationWalletId = $destinationId;
+        if ($tripId) {
+            $this->selectedTripId = $tripId;
+            $this->mode = 'trip';
         }
 
-        if ($this->mode === 'saving') {
-            $this->title = 'Nabung Pundi Liburan';
-            $this->amount = 100000;
+        if ($this->mode === 'trip') {
+            $this->title = $this->title ?: 'Kuliner / Transport Liburan';
+            $this->amount = $this->amount ?: 75000;
         } else {
-            $this->title = $this->title ?: 'GrabCar ke Malioboro';
+            $this->title = $this->title ?: 'GrabCar ke Stasiun';
             $this->amount = $this->amount ?: 45000;
         }
 
@@ -107,9 +111,13 @@ class CreateModal extends Component
     public function setMode(string $mode): void
     {
         $this->mode = $mode;
-        if ($mode === 'saving') {
-            if (empty($this->title) || $this->title === 'GrabCar ke Malioboro') {
-                $this->title = 'Nabung Pundi Liburan';
+        if ($mode === 'trip') {
+            if (empty($this->title) || $this->title === 'GrabCar ke Stasiun') {
+                $this->title = 'Kuliner / Transport Liburan';
+            }
+        } else {
+            if ($this->title === 'Kuliner / Transport Liburan') {
+                $this->title = 'GrabCar ke Stasiun';
             }
         }
     }
@@ -161,65 +169,43 @@ class CreateModal extends Component
         $rules = [
             'amount' => 'required|numeric|min:1000',
             'selectedWalletId' => 'required|exists:wallets,id',
+            'selectedCategoryId' => 'required|exists:categories,id',
             'title' => 'required|string|max:150',
             'transactionDate' => 'required',
         ];
 
-        if ($this->mode === 'expense') {
-            $rules['selectedCategoryId'] = 'required|exists:categories,id';
-        } elseif ($this->mode === 'saving') {
-            $rules['destinationWalletId'] = 'required|exists:wallets,id|different:selectedWalletId';
+        if ($this->mode === 'trip') {
+            $rules['selectedTripId'] = 'required|exists:trips,id';
         }
 
         $this->validate($rules, [
             'selectedCategoryId.required' => 'Pilih salah satu kategori transaksi.',
-            'destinationWalletId.required' => 'Pilih dompet tujuan tabungan.',
-            'destinationWalletId.different' => 'Dompet tujuan harus berbeda dari sumber dana.',
+            'selectedTripId.required' => 'Pilih trip tujuan pencatatan ini.',
             'amount.min' => 'Nominal minimal Rp 1.000.',
         ]);
 
         DB::transaction(function () use ($user) {
             $wallet = Wallet::lockForUpdate()->findOrFail($this->selectedWalletId);
+            $category = Category::find($this->selectedCategoryId);
 
-            if ($this->mode === 'expense') {
-                $category = Category::find($this->selectedCategoryId);
+            Transaction::create([
+                'user_id' => $user->id,
+                'wallet_id' => $wallet->id,
+                'trip_id' => $this->mode === 'trip' ? $this->selectedTripId : null,
+                'category_id' => $category?->id,
+                'type' => 'expense',
+                'amount' => $this->amount,
+                'title' => $this->title,
+                'note' => $this->note ?: null,
+                'transaction_date' => Carbon::parse($this->transactionDate),
+            ]);
 
-                Transaction::create([
-                    'user_id' => $user->id,
-                    'wallet_id' => $wallet->id,
-                    'category_id' => $category?->id,
-                    'type' => 'expense',
-                    'amount' => $this->amount,
-                    'title' => $this->title,
-                    'note' => $this->note ?: null,
-                    'transaction_date' => Carbon::parse($this->transactionDate),
-                ]);
-
-                // Deduct from wallet balance
-                $wallet->decrement('current_balance', $this->amount);
-            } elseif ($this->mode === 'saving') {
-                $destWallet = Wallet::lockForUpdate()->findOrFail($this->destinationWalletId);
-
-                Transaction::create([
-                    'user_id' => $user->id,
-                    'wallet_id' => $wallet->id,
-                    'destination_wallet_id' => $destWallet->id,
-                    'category_id' => null,
-                    'type' => 'transfer',
-                    'amount' => $this->amount,
-                    'title' => $this->title ?: 'Nabung Trip ' . $destWallet->name,
-                    'note' => $this->note ?: null,
-                    'transaction_date' => Carbon::parse($this->transactionDate),
-                ]);
-
-                // Transfer balance
-                $wallet->decrement('current_balance', $this->amount);
-                $destWallet->increment('current_balance', $this->amount);
-            }
+            // Deduct balance from wallet
+            $wallet->decrement('current_balance', $this->amount);
         });
 
         $this->dispatch('transaction-saved');
-        $this->dispatch('notify', message: 'Transaksi berhasil disimpan!');
+        $this->dispatch('notify', message: 'Transaksi berhasil dicatat!');
         $this->closeModal();
     }
 
@@ -229,18 +215,20 @@ class CreateModal extends Component
         $userId = $user?->id;
 
         $wallets = Wallet::where('user_id', $userId)->get();
+        $trips = Trip::where('user_id', $userId)->orderByRaw("CASE WHEN status = 'active' THEN 1 WHEN status = 'planned' THEN 2 ELSE 3 END")->get();
         $categories = Category::where(function ($query) use ($userId) {
             $query->whereNull('user_id')->orWhere('user_id', $userId);
         })->where('type', 'expense')->get();
 
         $selectedWallet = $wallets->firstWhere('id', $this->selectedWalletId);
-        $destinationWallet = $wallets->firstWhere('id', $this->destinationWalletId);
+        $selectedTrip = $trips->firstWhere('id', $this->selectedTripId);
 
         return view('livewire.transactions.create-modal', [
             'wallets' => $wallets,
+            'trips' => $trips,
             'categories' => $categories,
             'selectedWallet' => $selectedWallet,
-            'destinationWallet' => $destinationWallet,
+            'selectedTrip' => $selectedTrip,
         ]);
     }
 }

@@ -15,6 +15,7 @@ class Transaction extends Model
         'user_id',
         'wallet_id',
         'destination_wallet_id',
+        'trip_id',
         'category_id',
         'type', // expense, income, transfer
         'amount',
@@ -41,6 +42,11 @@ class Transaction extends Model
     public function destinationWallet(): BelongsTo
     {
         return $this->belongsTo(Wallet::class, 'destination_wallet_id');
+    }
+
+    public function trip(): BelongsTo
+    {
+        return $this->belongsTo(Trip::class);
     }
 
     public function category(): BelongsTo

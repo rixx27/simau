@@ -4,6 +4,7 @@ namespace App\Livewire\Dashboard;
 
 use App\Exports\SimauReportExport;
 use App\Models\Transaction;
+use App\Models\Trip;
 use App\Models\User;
 use App\Models\Wallet;
 use Carbon\Carbon;
@@ -45,22 +46,19 @@ class Index extends Component
         // Wallets
         $wallets = Wallet::where('user_id', $userId)->get();
         $totalBalance = $wallets->sum('current_balance');
-
         $operationalWallet = $wallets->where('type', 'operational')->first();
-        $tripWallet = $wallets->where('type', 'trip')->first();
 
         // Calculate Batas Harian (Daily Limit)
         $dailyLimit = $operationalWallet?->daily_limit ?? 350000;
 
-        // Today's expenses (using today's date or seed reference 13 Nov 2026)
         $today = Carbon::now();
-        // Check if there are transactions today, if not check for November 13, 2026 for demo consistency
         $hasToday = Transaction::where('user_id', $userId)
             ->whereDate('transaction_date', $today->toDateString())
             ->exists();
 
         $referenceDate = $hasToday ? $today->toDateString() : '2026-11-13';
 
+        // Daily expenses (transactions not tied to trip, or today's operational expenses)
         $todayExpenses = Transaction::where('user_id', $userId)
             ->where('wallet_id', $operationalWallet?->id)
             ->where('type', 'expense')
@@ -70,13 +68,30 @@ class Index extends Component
         $remainingDaily = max(0, $dailyLimit - $todayExpenses);
         $dailyPercentRemaining = $dailyLimit > 0 ? round(($remainingDaily / $dailyLimit) * 100) : 0;
 
-        // Trip Savings Progress
-        $tripBalance = $tripWallet?->current_balance ?? 4200000;
-        $tripTarget = $tripWallet?->target_amount ?? 5000000;
-        $tripPercent = $tripTarget > 0 ? round(($tripBalance / $tripTarget) * 100) : 0;
+        // Active Trip
+        $activeTrip = Trip::where('user_id', $userId)
+            ->where('status', 'active')
+            ->latest()
+            ->first();
 
-        // Recent Transactions (limit 8)
-        $recentTransactions = Transaction::with(['category', 'wallet'])
+        // Fallback trip stats if active trip exists
+        $tripName = $activeTrip?->name ?? 'Pundi Liburan';
+        $tripSpent = $activeTrip ? $activeTrip->total_spent : 4200000;
+        $tripBudget = $activeTrip ? (float)$activeTrip->budget : 5000000;
+        $tripPercent = $tripBudget > 0 ? round(($tripSpent / $tripBudget) * 100) : 84;
+
+        // Balance Breakdown for Hero Card Sub-badge
+        $operationalBalance = (float) $wallets->where('type', 'operational')->sum('current_balance');
+        $tripBalance = (float) $wallets->where('type', 'trip')->sum('current_balance');
+        $formattedOpShort = $operationalBalance >= 1000000
+            ? 'Rp ' . number_format($operationalBalance / 1000000, 1, ',', '.') . ' Jt'
+            : 'Rp ' . number_format($operationalBalance, 0, ',', '.');
+        $formattedTripShort = $tripBalance >= 1000000
+            ? 'Rp ' . number_format($tripBalance / 1000000, 1, ',', '.') . ' Jt'
+            : 'Rp ' . number_format($tripBalance, 0, ',', '.');
+
+        // Recent Transactions (limit 8) with trip and category relations
+        $recentTransactions = Transaction::with(['category', 'wallet', 'trip'])
             ->where('user_id', $userId)
             ->orderBy('transaction_date', 'desc')
             ->take(8)
@@ -89,10 +104,13 @@ class Index extends Component
             'dailyLimit' => $dailyLimit,
             'remainingDaily' => $remainingDaily,
             'dailyPercentRemaining' => $dailyPercentRemaining,
-            'tripWallet' => $tripWallet,
-            'tripBalance' => $tripBalance,
-            'tripTarget' => $tripTarget,
+            'activeTrip' => $activeTrip,
+            'tripName' => $tripName,
+            'tripSpent' => $tripSpent,
+            'tripBudget' => $tripBudget,
             'tripPercent' => $tripPercent,
+            'formattedOpShort' => $formattedOpShort,
+            'formattedTripShort' => $formattedTripShort,
             'recentTransactions' => $recentTransactions,
             'referenceDate' => $referenceDate,
         ]);

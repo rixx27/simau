@@ -4,6 +4,7 @@ namespace Database\Seeders;
 
 use App\Models\Category;
 use App\Models\Transaction;
+use App\Models\Trip;
 use App\Models\User;
 use App\Models\Wallet;
 use Carbon\Carbon;
@@ -24,7 +25,7 @@ class DatabaseSeeder extends Seeder
             'email' => 'krisna@simau.app',
             'phone' => '+62 812-3456-7890',
             'password' => Hash::make('password'),
-            'avatar_path' => null,
+            'avatar_path' => 'avatars/krisna.png',
             'biometric_enabled' => true,
             'email_verified_at' => now(),
         ]);
@@ -52,7 +53,32 @@ class DatabaseSeeder extends Seeder
             'status' => 'active',
         ]);
 
-        // 3. Categories
+        // 3. Trips (Travel Lifecycle)
+        $activeTrip = Trip::create([
+            'user_id' => $user->id,
+            'name' => 'Liburan Eksplor Jogja',
+            'destination' => 'Yogyakarta',
+            'start_date' => '2026-11-12',
+            'end_date' => '2026-11-16',
+            'budget' => 5000000,
+            'status' => 'active',
+            'cover_image' => 'https://images.unsplash.com/photo-1584810359583-96fc3448beaa?auto=format&fit=crop&w=600&q=80',
+            'notes' => 'Eksplor Malioboro, Candi Prambanan, dan Pantai Gunungkidul',
+        ]);
+
+        $completedTrip = Trip::create([
+            'user_id' => $user->id,
+            'name' => 'Staycation & Kuliner Bandung',
+            'destination' => 'Bandung',
+            'start_date' => '2026-10-26',
+            'end_date' => '2026-10-29',
+            'budget' => 2500000,
+            'status' => 'completed',
+            'cover_image' => 'https://images.unsplash.com/photo-1570789210967-2cac24afeb00?auto=format&fit=crop&w=600&q=80',
+            'notes' => 'Wisata Lembang, belanja Factory Outlet, dan kopi Braga',
+        ]);
+
+        // 4. Categories
         $catMakanan = Category::create([
             'user_id' => null,
             'name' => 'Makanan',
@@ -93,14 +119,14 @@ class DatabaseSeeder extends Seeder
             'type' => 'expense',
         ]);
 
-        // 4. Sample Transactions
-        // Reference date: current date (e.g. 13 Nov 2026 or today)
+        // 5. Sample Transactions
         $now = Carbon::parse('2026-11-13 19:42:00');
 
-        // Today's transactions (13 Nov 2026) -> Total spent today = 147.000 (Remaining = 203.000 / 350.000 = 58%)
+        // Today's transactions (13 Nov 2026)
         Transaction::create([
             'user_id' => $user->id,
             'wallet_id' => $operationalWallet->id,
+            'trip_id' => $activeTrip->id,
             'category_id' => $catGrabCar->id,
             'type' => 'expense',
             'amount' => 45000,
@@ -112,17 +138,19 @@ class DatabaseSeeder extends Seeder
         Transaction::create([
             'user_id' => $user->id,
             'wallet_id' => $operationalWallet->id,
+            'trip_id' => $activeTrip->id,
             'category_id' => $catMakanan->id,
             'type' => 'expense',
             'amount' => 32000,
             'title' => 'Makan Siang',
-            'note' => 'Nasi Padang Garuda',
+            'note' => 'Gudeg Yu Djum Malioboro',
             'transaction_date' => $now->copy()->setTime(12, 45),
         ]);
 
         Transaction::create([
             'user_id' => $user->id,
             'wallet_id' => $operationalWallet->id,
+            'trip_id' => null, // Daily expense
             'category_id' => $catMakanan->id,
             'type' => 'expense',
             'amount' => 70000,
@@ -135,6 +163,7 @@ class DatabaseSeeder extends Seeder
         Transaction::create([
             'user_id' => $user->id,
             'wallet_id' => $operationalWallet->id,
+            'trip_id' => $activeTrip->id,
             'category_id' => $catPenginapan->id,
             'type' => 'expense',
             'amount' => 480000,
@@ -146,6 +175,7 @@ class DatabaseSeeder extends Seeder
         Transaction::create([
             'user_id' => $user->id,
             'wallet_id' => $operationalWallet->id,
+            'trip_id' => $activeTrip->id,
             'category_id' => $catKopi->id,
             'type' => 'expense',
             'amount' => 24000,
@@ -154,14 +184,11 @@ class DatabaseSeeder extends Seeder
             'transaction_date' => $now->copy()->subDay()->setTime(16, 30),
         ]);
 
-        // Min 3 (15 - 21 Nov 2026) -> Matching Mockup 2:
-        // GrabCar Sudirman - SCBD: Rp 72.000
-        // Kopi Kenangan Senopati: Rp 38.000
-        // Artotel Thamrin DP: Rp 342.000
-        // Total Min 3 = 452.000!
+        // Min 3 (15 - 21 Nov 2026)
         Transaction::create([
             'user_id' => $user->id,
             'wallet_id' => $operationalWallet->id,
+            'trip_id' => null,
             'category_id' => $catGrabCar->id,
             'type' => 'expense',
             'amount' => 72000,
@@ -173,6 +200,7 @@ class DatabaseSeeder extends Seeder
         Transaction::create([
             'user_id' => $user->id,
             'wallet_id' => $operationalWallet->id,
+            'trip_id' => null,
             'category_id' => $catKopi->id,
             'type' => 'expense',
             'amount' => 38000,
@@ -184,6 +212,7 @@ class DatabaseSeeder extends Seeder
         Transaction::create([
             'user_id' => $user->id,
             'wallet_id' => $operationalWallet->id,
+            'trip_id' => null,
             'category_id' => $catPenginapan->id,
             'type' => 'expense',
             'amount' => 342000,
@@ -192,10 +221,11 @@ class DatabaseSeeder extends Seeder
             'transaction_date' => Carbon::parse('2026-11-16 11:05:00'),
         ]);
 
-        // Min 1 (1 - 7 Nov 2026) -> Total 420.000
+        // Min 1 (1 - 7 Nov 2026)
         Transaction::create([
             'user_id' => $user->id,
             'wallet_id' => $operationalWallet->id,
+            'trip_id' => null,
             'category_id' => $catMakanan->id,
             'type' => 'expense',
             'amount' => 250000,
@@ -207,6 +237,7 @@ class DatabaseSeeder extends Seeder
         Transaction::create([
             'user_id' => $user->id,
             'wallet_id' => $operationalWallet->id,
+            'trip_id' => null,
             'category_id' => $catGrabCar->id,
             'type' => 'expense',
             'amount' => 170000,
@@ -215,10 +246,11 @@ class DatabaseSeeder extends Seeder
             'transaction_date' => Carbon::parse('2026-11-05 06:45:00'),
         ]);
 
-        // Min 4 (22 - 28 Nov 2026) -> Total 486.000
+        // Min 4 (22 - 28 Nov 2026)
         Transaction::create([
             'user_id' => $user->id,
             'wallet_id' => $operationalWallet->id,
+            'trip_id' => null,
             'category_id' => $catMakanan->id,
             'type' => 'expense',
             'amount' => 188000,
@@ -230,6 +262,7 @@ class DatabaseSeeder extends Seeder
         Transaction::create([
             'user_id' => $user->id,
             'wallet_id' => $operationalWallet->id,
+            'trip_id' => null,
             'category_id' => $catTiket->id,
             'type' => 'expense',
             'amount' => 262000,
@@ -241,6 +274,7 @@ class DatabaseSeeder extends Seeder
         Transaction::create([
             'user_id' => $user->id,
             'wallet_id' => $operationalWallet->id,
+            'trip_id' => null,
             'category_id' => $catKopi->id,
             'type' => 'expense',
             'amount' => 36000,
@@ -249,51 +283,41 @@ class DatabaseSeeder extends Seeder
             'transaction_date' => Carbon::parse('2026-11-27 13:20:00'),
         ]);
 
-        // Seed an initial income/top-up and trip saving transfer
+        // October Sample Transactions (Linked to Bandung Trip)
         Transaction::create([
             'user_id' => $user->id,
             'wallet_id' => $operationalWallet->id,
-            'destination_wallet_id' => $tripWallet->id,
-            'category_id' => null,
-            'type' => 'transfer',
-            'amount' => 1000000,
-            'title' => 'Nabung Trip Jogja',
-            'note' => 'Alokasi tabungan liburan bulanan',
-            'transaction_date' => Carbon::parse('2026-11-01 10:00:00'),
-        ]);
-
-        // Seed some October sample transactions for period filter testing
-        Transaction::create([
-            'user_id' => $user->id,
-            'wallet_id' => $operationalWallet->id,
-            'category_id' => $catMakanan->id,
-            'type' => 'expense',
-            'amount' => 850000,
-            'title' => 'Kuliner Bulanan Oktober',
-            'note' => 'Total makan bulanan',
-            'transaction_date' => Carbon::parse('2026-10-15 12:00:00'),
-        ]);
-
-        Transaction::create([
-            'user_id' => $user->id,
-            'wallet_id' => $operationalWallet->id,
-            'category_id' => $catGrabCar->id,
-            'type' => 'expense',
-            'amount' => 450000,
-            'title' => 'Transportasi Oktober',
-            'note' => 'Grab & Gojek bulanan',
-            'transaction_date' => Carbon::parse('2026-10-20 09:00:00'),
-        ]);
-
-        Transaction::create([
-            'user_id' => $user->id,
-            'wallet_id' => $operationalWallet->id,
+            'trip_id' => $completedTrip->id,
             'category_id' => $catPenginapan->id,
             'type' => 'expense',
-            'amount' => 600000,
-            'title' => 'Hotel Bandung Weekend',
-            'note' => 'Liburan singkat',
-            'transaction_date' => Carbon::parse('2026-10-28 15:00:00'),
+            'amount' => 1250000,
+            'title' => 'Hotel Padma Bandung 2 Malam',
+            'note' => 'Penginapan liburan Bandung',
+            'transaction_date' => Carbon::parse('2026-10-26 14:00:00'),
+        ]);
+
+        Transaction::create([
+            'user_id' => $user->id,
+            'wallet_id' => $operationalWallet->id,
+            'trip_id' => $completedTrip->id,
+            'category_id' => $catMakanan->id,
+            'type' => 'expense',
+            'amount' => 580000,
+            'title' => 'Kuliner Iga Bakar & Cafe Bandung',
+            'note' => 'Makan malam dan cafe hop Lembang',
+            'transaction_date' => Carbon::parse('2026-10-27 19:30:00'),
+        ]);
+
+        Transaction::create([
+            'user_id' => $user->id,
+            'wallet_id' => $operationalWallet->id,
+            'trip_id' => $completedTrip->id,
+            'category_id' => $catTiket->id,
+            'type' => 'expense',
+            'amount' => 350000,
+            'title' => 'Tiket Wisata Tangkuban Perahu',
+            'note' => 'Tiket masuk & parkir wisata',
+            'transaction_date' => Carbon::parse('2026-10-28 11:00:00'),
         ]);
     }
 }

@@ -108,6 +108,14 @@ class User extends Authenticatable implements MustVerifyEmail, PasskeyUser
     }
 
     /**
+     * Trips created by user
+     */
+    public function trips(): HasMany
+    {
+        return $this->hasMany(Trip::class);
+    }
+
+    /**
      * Get the user's initials
      */
     public function initials(): string

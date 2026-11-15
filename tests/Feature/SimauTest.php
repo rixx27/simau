@@ -9,6 +9,7 @@ use App\Livewire\Profile\Edit;
 use App\Livewire\Transactions\CreateModal;
 use App\Livewire\Wallets\Index as WalletsIndex;
 use App\Models\Category;
+use App\Models\Trip;
 use App\Models\User;
 use App\Models\Wallet;
 use Illuminate\Foundation\Testing\RefreshDatabase;
@@ -30,7 +31,7 @@ class SimauTest extends TestCase
     {
         $response = $this->get('/dashboard');
         $response->assertStatus(200);
-        $response->assertSee('TOTAL SALDO AKTIF');
+        $response->assertSee('TOTAL KAS & TABUNGAN');
         $response->assertSee('Batas Harian');
         $response->assertSee('Pundi Liburan');
         $response->assertSee('Transaksi Terbaru');
@@ -65,7 +66,7 @@ class SimauTest extends TestCase
         $response->assertSee('Login Biometrik');
     }
 
-    public function test_can_create_expense_transaction()
+    public function test_can_create_daily_expense_transaction()
     {
         $user = User::first();
         $wallet = Wallet::where('type', 'operational')->first();
@@ -76,7 +77,7 @@ class SimauTest extends TestCase
 
         Livewire::actingAs($user)
             ->test(CreateModal::class)
-            ->call('openModal', 'expense')
+            ->call('openModal', 'daily')
             ->set('amount', $expenseAmount)
             ->set('selectedWalletId', $wallet->id)
             ->set('selectedCategoryId', $category->id)
@@ -89,44 +90,46 @@ class SimauTest extends TestCase
             'title' => 'Makan Malam Sushi',
             'amount' => $expenseAmount,
             'type' => 'expense',
+            'trip_id' => null,
         ]);
 
         $wallet->refresh();
         $this->assertEquals($initialBalance - $expenseAmount, $wallet->current_balance);
     }
 
-    public function test_can_create_trip_saving_transfer()
+    public function test_can_create_trip_expense_transaction()
     {
         $user = User::first();
-        $opWallet = Wallet::where('type', 'operational')->first();
-        $tripWallet = Wallet::where('type', 'trip')->first();
+        $wallet = Wallet::where('type', 'operational')->first();
+        $trip = Trip::where('status', 'active')->first();
+        $category = Category::where('name', 'Makanan')->first();
 
-        $opInitial = $opWallet->current_balance;
-        $tripInitial = $tripWallet->current_balance;
-        $savingAmount = 200000;
+        $initialBalance = $wallet->current_balance;
+        $tripInitialSpent = $trip->total_spent;
+        $expenseAmount = 120000;
 
         Livewire::actingAs($user)
             ->test(CreateModal::class)
-            ->call('openModal', 'saving')
-            ->set('amount', $savingAmount)
-            ->set('selectedWalletId', $opWallet->id)
-            ->set('destinationWalletId', $tripWallet->id)
-            ->set('title', 'Alokasi Nabung Tambahan')
-            ->set('transactionDate', '2026-11-13T20:00')
+            ->call('openModal', 'trip')
+            ->set('amount', $expenseAmount)
+            ->set('selectedWalletId', $wallet->id)
+            ->set('selectedTripId', $trip->id)
+            ->set('selectedCategoryId', $category->id)
+            ->set('title', 'Kuliner Malam Malioboro')
+            ->set('transactionDate', '2026-11-13T21:00')
             ->call('save')
             ->assertDispatched('transaction-saved');
 
         $this->assertDatabaseHas('transactions', [
-            'title' => 'Alokasi Nabung Tambahan',
-            'amount' => $savingAmount,
-            'type' => 'transfer',
+            'title' => 'Kuliner Malam Malioboro',
+            'amount' => $expenseAmount,
+            'type' => 'expense',
+            'trip_id' => $trip->id,
         ]);
 
-        $opWallet->refresh();
-        $tripWallet->refresh();
-
-        $this->assertEquals($opInitial - $savingAmount, $opWallet->current_balance);
-        $this->assertEquals($tripInitial + $savingAmount, $tripWallet->current_balance);
+        $wallet->refresh();
+        $this->assertEquals($initialBalance - $expenseAmount, $wallet->current_balance);
+        $this->assertEquals($tripInitialSpent + $expenseAmount, $trip->total_spent);
     }
 
     public function test_excel_export_download()
