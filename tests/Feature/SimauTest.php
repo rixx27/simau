@@ -132,6 +132,68 @@ class SimauTest extends TestCase
         $this->assertEquals($tripInitialSpent + $expenseAmount, $trip->total_spent);
     }
 
+    public function test_can_deposit_to_savings_goal_from_operational_cash()
+    {
+        $user = User::first();
+        $opWallet = Wallet::where('user_id', $user->id)->where('type', 'operational')->first();
+        $goalWallet = Wallet::where('user_id', $user->id)->where('type', 'trip')->first();
+
+        $initialOp = $opWallet->current_balance;
+        $initialGoal = $goalWallet->current_balance;
+        $deposit = 250000;
+
+        Livewire::actingAs($user)
+            ->test(WalletsIndex::class)
+            ->call('openDepositModal', $goalWallet->id)
+            ->set('depositAmount', $deposit)
+            ->set('sourceMode', 'operational')
+            ->set('sourceWalletId', $opWallet->id)
+            ->set('depositNote', 'Sisihkan gaji untuk liburan')
+            ->call('saveDeposit')
+            ->assertDispatched('transaction-saved');
+
+        $opWallet->refresh();
+        $goalWallet->refresh();
+
+        $this->assertEquals($initialOp - $deposit, $opWallet->current_balance);
+        $this->assertEquals($initialGoal + $deposit, $goalWallet->current_balance);
+
+        $this->assertDatabaseHas('transactions', [
+            'type' => 'transfer',
+            'wallet_id' => $opWallet->id,
+            'destination_wallet_id' => $goalWallet->id,
+            'amount' => $deposit,
+        ]);
+    }
+
+    public function test_can_deposit_to_savings_goal_from_external_income()
+    {
+        $user = User::first();
+        $goalWallet = Wallet::where('user_id', $user->id)->where('type', 'trip')->first();
+
+        $initialGoal = $goalWallet->current_balance;
+        $deposit = 500000;
+
+        Livewire::actingAs($user)
+            ->test(WalletsIndex::class)
+            ->call('openDepositModal', $goalWallet->id)
+            ->set('depositAmount', $deposit)
+            ->set('sourceMode', 'external')
+            ->set('depositNote', 'Bonus lembur')
+            ->call('saveDeposit')
+            ->assertDispatched('transaction-saved');
+
+        $goalWallet->refresh();
+
+        $this->assertEquals($initialGoal + $deposit, $goalWallet->current_balance);
+
+        $this->assertDatabaseHas('transactions', [
+            'type' => 'income',
+            'wallet_id' => $goalWallet->id,
+            'amount' => $deposit,
+        ]);
+    }
+
     public function test_excel_export_download()
     {
         Excel::fake();
