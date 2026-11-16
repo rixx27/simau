@@ -43,7 +43,7 @@
                 @if($avatar)
                     <img src="{{ $avatar->temporaryUrl() }}" alt="Avatar Preview" class="w-full h-full object-cover" />
                 @else
-                    <img src="{{ $user?->avatar_url ?? asset('avatars/krisna.png') }}" alt="{{ $user?->name }}" class="w-full h-full object-cover" />
+                    <img src="{{ $user?->avatar_url ?? asset('avatars/avatar-1.svg') }}" alt="{{ $user?->name }}" class="w-full h-full object-cover" />
                 @endif
             </div>
 
@@ -67,10 +67,24 @@
             class="hidden"
         />
 
-        <div class="mt-3">
-            <h3 class="text-sm font-bold text-white">Foto Profil</h3>
-            <p class="text-xs text-[#9CA3AF]">Ketuk untuk mengganti foto profil (Maks. 5 MB)</p>
-            @error('avatar') <p class="text-xs text-red-400 mt-1">{{ $message }}</p> @enderror
+        <div class="mt-4">
+            <h3 class="text-sm font-bold text-white">Avatar &amp; Foto Profil</h3>
+            <p class="text-xs text-[#9CA3AF] mb-3">Pilih avatar favorit atau ketuk kamera untuk unggah foto sendiri</p>
+            @error('avatar') <p class="text-xs text-red-400 mb-2">{{ $message }}</p> @enderror
+
+            <!-- Preset Avatar Selector -->
+            <div class="flex items-center justify-center gap-2.5 flex-wrap">
+                @for($i = 1; $i <= 6; $i++)
+                    <button
+                        type="button"
+                        wire:click="selectAvatar({{ $i }})"
+                        class="w-10 h-10 rounded-full overflow-hidden border-2 transition-all hover:scale-110 cursor-pointer {{ ($user?->avatar_path === 'avatars/avatar-' . $i . '.svg') ? 'border-[#00E676] ring-2 ring-[#00E676]/40 scale-105' : 'border-[#262C37] hover:border-[#5865F2]' }}"
+                        title="Pilih Avatar {{ $i }}"
+                    >
+                        <img src="{{ asset('avatars/avatar-' . $i . '.svg') }}" alt="Avatar {{ $i }}" class="w-full h-full object-cover" />
+                    </button>
+                @endfor
+            </div>
         </div>
     </div>
 
@@ -363,5 +377,21 @@
             </svg>
             <span>Simpan Perubahan</span>
         </button>
+    </div>
+
+    <!-- LOGOUT BUTTON -->
+    <div class="pt-4 border-t border-[#262C37]/60">
+        <form method="POST" action="{{ route('logout') }}">
+            @csrf
+            <button
+                type="submit"
+                class="w-full py-3 px-4 rounded-2xl bg-red-500/10 hover:bg-red-500/20 border border-red-500/30 text-xs font-bold text-red-400 hover:text-red-300 transition-all flex items-center justify-center gap-2 cursor-pointer"
+            >
+                <svg class="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke-width="2" stroke="currentColor">
+                    <path stroke-linecap="round" stroke-linejoin="round" d="M15.75 9V5.25A2.25 2.25 0 0 0 13.5 3h-6a2.25 2.25 0 0 0-2.25 2.25v13.5A2.25 2.25 0 0 0 7.5 21h6a2.25 2.25 0 0 0 2.25-2.25V15m3 0 3-3m0 0-3-3m3 3H9" />
+                </svg>
+                <span>Keluar dari Akun (Logout)</span>
+            </button>
+        </form>
     </div>
 </div>

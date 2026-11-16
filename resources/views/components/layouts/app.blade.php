@@ -5,7 +5,16 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <meta name="csrf-token" content="{{ csrf_token() }}">
 
-    <title>{{ $title ?? 'SIMAU - Neo Financial' }}</title>
+    <title>{{ $title ?? 'SIMAU - Sistem Manajemen Uangku' }}</title>
+
+    <!-- Favicon & PWA Manifest -->
+    <link rel="icon" type="image/png" href="{{ asset('favicon.png') }}">
+    <link rel="apple-touch-icon" href="{{ asset('apple-touch-icon.png') }}">
+    <link rel="manifest" href="/manifest.json">
+    <meta name="theme-color" content="#0D0E12">
+    <meta name="apple-mobile-web-app-capable" content="yes">
+    <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+    <meta name="apple-mobile-web-app-title" content="SIMAU">
 
     <!-- Google Fonts -->
     <link rel="preconnect" href="https://fonts.googleapis.com">
@@ -20,13 +29,13 @@
         <!-- DESKTOP SIDEBAR (>= 768px) -->
         <aside class="hidden md:flex md:w-64 flex-col fixed inset-y-0 left-0 bg-[#17181E] border-r border-[#262C37] z-30">
             <!-- Brand Header -->
-            <div class="p-6 flex items-center gap-3 border-b border-[#262C37]/60">
+            <a href="{{ route('dashboard') }}" wire:navigate class="p-6 flex items-center gap-3 border-b border-[#262C37]/60 group transition-all">
                 <div class="relative">
-                    <div class="w-10 h-10 rounded-xl bg-gradient-to-tr from-[#5865F2] to-[#3B82F6] flex items-center justify-center shadow-lg shadow-[#5865F2]/25">
-                        <svg class="w-6 h-6 text-white" fill="none" viewBox="0 0 24 24" stroke-width="2" stroke="currentColor">
-                            <path stroke-linecap="round" stroke-linejoin="round" d="M21 12a2.25 2.25 0 0 0-2.25-2.25H15a3 3 0 1 1-6 0H5.25A2.25 2.25 0 0 0 3 12m18 0v6a2.25 2.25 0 0 1-2.25 2.25H5.25A2.25 2.25 0 0 1 3 18v-6m18 0V9M3 12V9m18 0a2.25 2.25 0 0 0-2.25-2.25H5.25A2.25 2.25 0 0 0 3 9m18 0V6a2.25 2.25 0 0 0-2.25-2.25H5.25A2.25 2.25 0 0 0 3 6v3" />
-                        </svg>
-                    </div>
+                    <img
+                        src="{{ asset('images/logo.png') }}"
+                        alt="SIMAU Logo"
+                        class="w-10 h-10 rounded-xl object-contain shadow-lg shadow-black/40 group-hover:scale-105 transition-transform"
+                    />
                     <span class="absolute -bottom-0.5 -right-0.5 w-3 h-3 bg-[#00E676] border-2 border-[#17181E] rounded-full"></span>
                 </div>
                 <div>
@@ -34,9 +43,9 @@
                         SIMAU
                         <span class="text-[10px] uppercase font-semibold tracking-wider px-1.5 py-0.5 rounded bg-[#5865F2]/20 text-[#5865F2] border border-[#5865F2]/30">v1.2</span>
                     </h1>
-                    <p class="text-xs text-[#9CA3AF] font-medium">Neo Financial</p>
+                    <p class="text-xs text-[#9CA3AF] font-medium">Sistem Manajemen Uangku</p>
                 </div>
-            </div>
+            </a>
 
             <!-- Primary Action Button: + Catat Transaksi -->
             <div class="px-5 pt-5 pb-3">
@@ -70,6 +79,12 @@
                             'icon' => '<path stroke-linecap="round" stroke-linejoin="round" d="M19.5 14.25v-2.625a3.375 3.375 0 0 0-3.375-3.375h-1.5A1.125 1.125 0 0 1 13.5 7.125v-1.5a3.375 3.375 0 0 0-3.375-3.375H8.25m0 12.75h7.5m-7.5 3H12M10.5 2.25H5.625c-.621 0-1.125.504-1.125 1.125v17.25c0 .621.504 1.125 1.125 1.125h12.75c.621 0 1.125-.504 1.125-1.125V11.25a9 9 0 0 0-9-9Z" />'
                         ],
                         [
+                            'name' => 'Trip Liburan',
+                            'route' => 'trips.index',
+                            'active' => request()->routeIs('trips*'),
+                            'icon' => '<path stroke-linecap="round" stroke-linejoin="round" d="M6 12 3.269 3.125A59.769 59.769 0 0 1 21.485 12 59.768 59.768 0 0 1 3.27 20.875L5.999 12Zm0 0h7.5" />'
+                        ],
+                        [
                             'name' => 'Tabungan',
                             'route' => 'tabungan',
                             'active' => request()->routeIs('tabungan'),
@@ -99,22 +114,35 @@
             </nav>
 
             <!-- Bottom User Profile Card -->
-            <div class="p-4 border-t border-[#262C37]/60">
-                <a href="{{ route('profile') }}" wire:navigate class="flex items-center gap-3 p-2 rounded-xl hover:bg-[#1E2028] transition-colors group">
+            <div class="p-4 border-t border-[#262C37]/60 flex items-center justify-between gap-2">
+                <a href="{{ route('profile') }}" wire:navigate class="flex items-center gap-3 p-1.5 rounded-xl hover:bg-[#1E2028] transition-colors group flex-1 min-w-0">
                     <img
-                        src="{{ auth()->user()?->avatar_url ?? asset('avatars/krisna.png') }}"
+                        src="{{ auth()->user()?->avatar_url ?? asset('avatars/avatar-1.svg') }}"
                         alt="Avatar"
-                        class="w-10 h-10 rounded-full object-cover ring-2 ring-[#5865F2]/40"
+                        class="w-9 h-9 rounded-full object-cover ring-2 ring-[#5865F2]/40"
                     />
                     <div class="flex-1 min-w-0">
-                        <p class="text-sm font-semibold text-white truncate group-hover:text-[#5865F2] transition-colors">
+                        <p class="text-xs font-semibold text-white truncate group-hover:text-[#5865F2] transition-colors">
                             {{ auth()->user()?->name ?? 'Krisna Pradana' }}
                         </p>
-                        <p class="text-xs text-[#9CA3AF] truncate">
+                        <p class="text-[11px] text-[#9CA3AF] truncate">
                             {{ auth()->user()?->username ? '@'.auth()->user()->username : 'krisnapradana' }}
                         </p>
                     </div>
                 </a>
+
+                <form method="POST" action="{{ route('logout') }}">
+                    @csrf
+                    <button
+                        type="submit"
+                        class="w-8 h-8 rounded-lg bg-[#0D0E12] hover:bg-red-500/20 border border-[#262C37] hover:border-red-500/40 text-[#9CA3AF] hover:text-red-400 transition-colors flex items-center justify-center cursor-pointer"
+                        title="Keluar / Logout"
+                    >
+                        <svg class="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke-width="2" stroke="currentColor">
+                            <path stroke-linecap="round" stroke-linejoin="round" d="M15.75 9V5.25A2.25 2.25 0 0 0 13.5 3h-6a2.25 2.25 0 0 0-2.25 2.25v13.5A2.25 2.25 0 0 0 7.5 21h6a2.25 2.25 0 0 0 2.25-2.25V15m3 0 3-3m0 0-3-3m3 3H9" />
+                        </svg>
+                    </button>
+                </form>
             </div>
         </aside>
 
@@ -122,21 +150,23 @@
         <div class="flex-1 md:pl-64 flex flex-col min-h-screen">
             <!-- MOBILE TOP HEADER (< 768px) -->
             <header class="md:hidden sticky top-0 z-20 bg-[#0D0E12]/90 backdrop-blur-md border-b border-[#262C37]/70 px-4 py-3.5 flex items-center justify-between">
-                <div class="flex items-center gap-3">
-                    <a href="{{ route('profile') }}" wire:navigate class="relative">
-                        <img
-                            src="{{ auth()->user()?->avatar_url ?? asset('avatars/krisna.png') }}"
-                            alt="Avatar"
-                            class="w-9 h-9 rounded-full object-cover ring-2 ring-[#5865F2]/40"
-                        />
-                        <span class="absolute bottom-0 right-0 w-2.5 h-2.5 bg-[#00E676] border-2 border-[#0D0E12] rounded-full"></span>
+                <div class="flex items-center gap-2.5">
+                    <a href="{{ route('dashboard') }}" wire:navigate class="flex items-center gap-2.5">
+                        <div class="relative">
+                            <img
+                                src="{{ asset('images/logo.png') }}"
+                                alt="SIMAU Logo"
+                                class="w-8 h-8 rounded-xl object-contain shadow-md"
+                            />
+                            <span class="absolute -bottom-0.5 -right-0.5 w-2.5 h-2.5 bg-[#00E676] border-2 border-[#0D0E12] rounded-full"></span>
+                        </div>
+                        <div>
+                            <h2 class="text-sm font-bold text-white tracking-tight flex items-center gap-1">
+                                SIMAU
+                            </h2>
+                            <p class="text-[10px] text-[#9CA3AF]">Neo Financial</p>
+                        </div>
                     </a>
-                    <div>
-                        <h2 class="text-sm font-bold text-white tracking-tight flex items-center gap-1">
-                            SIMAU
-                        </h2>
-                        <p class="text-[11px] text-[#9CA3AF]">Neo Financial</p>
-                    </div>
                 </div>
 
                 <div class="flex items-center gap-2">
@@ -150,17 +180,18 @@
                             <path stroke-linecap="round" stroke-linejoin="round" d="m21 21-5.197-5.197m0 0A7.5 7.5 0 1 0 5.196 5.196a7.5 7.5 0 0 0 10.607 10.607Z" />
                         </svg>
                     </a>
-                    <button
-                        type="button"
-                        x-data
-                        @click="$dispatch('open-transaction-modal', { mode: 'expense' })"
-                        class="w-9 h-9 rounded-full bg-[#5865F2]/20 border border-[#5865F2]/40 flex items-center justify-center text-[#5865F2] hover:bg-[#5865F2] hover:text-white transition-colors cursor-pointer"
-                        title="Catat Baru"
+                    <a
+                        href="{{ route('profile') }}"
+                        wire:navigate
+                        class="relative block"
+                        title="Profil"
                     >
-                        <svg class="w-5 h-5" fill="none" viewBox="0 0 24 24" stroke-width="2.5" stroke="currentColor">
-                            <path stroke-linecap="round" stroke-linejoin="round" d="M12 4.5v15m7.5-7.5h-15" />
-                        </svg>
-                    </button>
+                        <img
+                            src="{{ auth()->user()?->avatar_url ?? asset('avatars/avatar-1.svg') }}"
+                            alt="Avatar"
+                            class="w-8 h-8 rounded-full object-cover ring-1 ring-[#5865F2]/50"
+                        />
+                    </a>
                 </div>
             </header>
 
@@ -193,7 +224,7 @@
                         class="flex items-center gap-2.5 pl-3 border-l border-[#262C37]"
                     >
                         <img
-                            src="{{ auth()->user()?->avatar_url ?? asset('avatars/krisna.png') }}"
+                            src="{{ auth()->user()?->avatar_url ?? asset('avatars/avatar-1.svg') }}"
                             alt="Avatar"
                             class="w-7 h-7 rounded-full object-cover ring-1 ring-[#5865F2]/50"
                         />
@@ -209,17 +240,17 @@
         </div>
 
         <!-- MOBILE FLOATING BOTTOM NAVIGATION BAR (< 768px) -->
-        <nav class="md:hidden fixed bottom-4 inset-x-4 max-w-sm mx-auto bg-[#17181E]/95 backdrop-blur-xl border border-[#262C37] rounded-3xl py-2 px-3 flex items-center justify-around z-40 shadow-2xl shadow-black/80">
+        <nav class="md:hidden fixed bottom-4 inset-x-3 max-w-md mx-auto bg-[#17181E]/95 backdrop-blur-xl border border-[#262C37] rounded-3xl py-2 px-2 flex items-center justify-around z-40 shadow-2xl shadow-black/80">
             @foreach($navItems as $item)
                 <a
                     href="{{ route($item['route']) }}"
                     wire:navigate
-                    class="flex flex-col items-center gap-1 py-1.5 px-3 rounded-2xl transition-all duration-200 {{ $item['active'] ? 'text-[#5865F2] font-semibold scale-105' : 'text-[#9CA3AF] hover:text-white' }}"
+                    class="flex flex-col items-center gap-1 py-1.5 px-2 rounded-2xl transition-all duration-200 {{ $item['active'] ? 'text-[#5865F2] font-semibold scale-105' : 'text-[#9CA3AF] hover:text-white' }}"
                 >
-                    <svg class="w-6 h-6" fill="none" viewBox="0 0 24 24" stroke-width="{{ $item['active'] ? '2.3' : '1.8' }}" stroke="currentColor">
+                    <svg class="w-5 h-5" fill="none" viewBox="0 0 24 24" stroke-width="{{ $item['active'] ? '2.3' : '1.8' }}" stroke="currentColor">
                         {!! $item['icon'] !!}
                     </svg>
-                    <span class="text-[11px] tracking-tight">{{ $item['name'] }}</span>
+                    <span class="text-[10px] tracking-tight">{{ $item['name'] }}</span>
                 </a>
             @endforeach
         </nav>
@@ -229,5 +260,16 @@
     <livewire:transactions.create-modal />
 
     @livewireScripts
+
+    <!-- PWA Service Worker Registration -->
+    <script>
+        if ('serviceWorker' in navigator) {
+            window.addEventListener('load', () => {
+                navigator.serviceWorker.register('/sw.js').catch(err => {
+                    console.log('SW registration skipped:', err);
+                });
+            });
+        }
+    </script>
 </body>
 </html>

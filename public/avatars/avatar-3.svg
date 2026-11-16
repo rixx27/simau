@@ -1,0 +1,41 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 256 256" width="256" height="256">
+  <defs>
+    <linearGradient id="bg3" x1="0%" y1="0%" x2="100%" y2="100%">
+      <stop offset="0%" stop-color="#042F2E"/>
+      <stop offset="100%" stop-color="#0D9488"/>
+    </linearGradient>
+  </defs>
+  <!-- Background -->
+  <rect width="256" height="256" rx="128" fill="url(#bg3)"/>
+  
+  <!-- Shoulders & Turtleneck -->
+  <path d="M54 256 C54 196 90 180 128 180 C166 180 202 196 202 256 Z" fill="#0F172A"/>
+  <rect x="108" y="156" width="40" height="34" rx="12" fill="#115E59"/>
+  
+  <!-- Head & Face -->
+  <rect x="88" y="80" width="80" height="92" rx="36" fill="#FCE7F3"/>
+  
+  <!-- Neat Quiff Hair -->
+  <path d="M80 84 C76 46 112 36 136 36 C162 36 182 52 176 86 C168 76 154 72 138 72 C116 72 96 78 80 84 Z" fill="#451A03"/>
+  <path d="M78 84 C74 104 78 120 84 130 C86 114 86 98 94 90 Z" fill="#451A03"/>
+  
+  <!-- Eyebrows -->
+  <path d="M102 108 L118 106" stroke="#451A03" stroke-width="3" stroke-linecap="round"/>
+  <path d="M138 106 L154 108" stroke="#451A03" stroke-width="3" stroke-linecap="round"/>
+  
+  <!-- Circular Glasses (Smart Minimalist) -->
+  <circle cx="110" cy="120" r="14" fill="#042F2E" fill-opacity="0.1" stroke="#F59E0B" stroke-width="3.5"/>
+  <circle cx="146" cy="120" r="14" fill="#042F2E" fill-opacity="0.1" stroke="#F59E0B" stroke-width="3.5"/>
+  <path d="M124 120 L132 120" stroke="#F59E0B" stroke-width="3.5"/>
+  <path d="M96 118 L86 114" stroke="#F59E0B" stroke-width="2.5" stroke-linecap="round"/>
+  <path d="M160 118 L170 114" stroke="#F59E0B" stroke-width="2.5" stroke-linecap="round"/>
+  
+  <!-- Eyes behind glasses -->
+  <circle cx="110" cy="120" r="4" fill="#0F172A"/>
+  <circle cx="146" cy="120" r="4" fill="#0F172A"/>
+  <circle cx="112" cy="118" r="1.5" fill="#FFFFFF"/>
+  <circle cx="148" cy="118" r="1.5" fill="#FFFFFF"/>
+  
+  <!-- Smile -->
+  <path d="M120 144 Q128 150 136 144" stroke="#4B5563" stroke-width="3" stroke-linecap="round" fill="none"/>
+</svg>

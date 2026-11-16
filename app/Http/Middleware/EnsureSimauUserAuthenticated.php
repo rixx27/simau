@@ -16,10 +16,7 @@ class EnsureSimauUserAuthenticated
     public function handle(Request $request, Closure $next): Response
     {
         if (!Auth::check()) {
-            $user = User::first();
-            if ($user) {
-                Auth::login($user);
-            }
+            return redirect()->route('login');
         }
 
         return $next($request);

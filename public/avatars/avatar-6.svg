@@ -1,0 +1,36 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 256 256" width="256" height="256">
+  <defs>
+    <linearGradient id="bg6" x1="0%" y1="0%" x2="100%" y2="100%">
+      <stop offset="0%" stop-color="#090A0F"/>
+      <stop offset="100%" stop-color="#1E1B4B"/>
+    </linearGradient>
+    <linearGradient id="visor" x1="0%" y1="0%" x2="100%" y2="100%">
+      <stop offset="0%" stop-color="#5865F2"/>
+      <stop offset="50%" stop-color="#8B5CF6"/>
+      <stop offset="100%" stop-color="#00E676"/>
+    </linearGradient>
+  </defs>
+  <!-- Background with Stars -->
+  <rect width="256" height="256" rx="128" fill="url(#bg6)"/>
+  <circle cx="56" cy="64" r="2" fill="#FFFFFF" opacity="0.6"/>
+  <circle cx="204" cy="72" r="2.5" fill="#00E676" opacity="0.7"/>
+  <circle cx="72" cy="180" r="1.5" fill="#818CF8" opacity="0.8"/>
+  <circle cx="196" cy="170" r="2" fill="#FFFFFF" opacity="0.5"/>
+  
+  <!-- Spacesuit Shoulders -->
+  <path d="M50 256 C50 190 88 174 128 174 C168 174 206 190 206 256 Z" fill="#E2E8F0"/>
+  <path d="M96 178 L128 202 L160 178 Z" fill="#5865F2"/>
+  
+  <!-- Helmet Base -->
+  <circle cx="128" cy="116" r="64" fill="#F8FAFC" stroke="#CBD5E1" stroke-width="4"/>
+  
+  <!-- Astronaut Visor (Iridescent Reflection) -->
+  <rect x="80" y="86" width="96" height="60" rx="30" fill="url(#visor)"/>
+  
+  <!-- Visor Highlights / Glint -->
+  <path d="M96 94 Q128 90 160 94" stroke="#FFFFFF" stroke-width="4" stroke-linecap="round" fill="none" opacity="0.8"/>
+  <circle cx="104" cy="106" r="3" fill="#FFFFFF" opacity="0.9"/>
+  
+  <!-- Badge on chest -->
+  <circle cx="128" cy="224" r="8" fill="#00E676"/>
+</svg>

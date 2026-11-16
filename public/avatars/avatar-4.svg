@@ -1,0 +1,40 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 256 256" width="256" height="256">
+  <defs>
+    <linearGradient id="bg4" x1="0%" y1="0%" x2="100%" y2="100%">
+      <stop offset="0%" stop-color="#431407"/>
+      <stop offset="100%" stop-color="#EA580C"/>
+    </linearGradient>
+  </defs>
+  <!-- Background -->
+  <rect width="256" height="256" rx="128" fill="url(#bg4)"/>
+  
+  <!-- Shoulders & Scarf -->
+  <path d="M54 256 C54 196 90 180 128 180 C166 180 202 196 202 256 Z" fill="#1C1917"/>
+  <path d="M96 172 Q128 198 160 172 Q176 196 156 210 Q128 220 100 210 Q80 196 96 172 Z" fill="#F59E0B"/>
+  
+  <!-- Face -->
+  <rect x="88" y="90" width="80" height="88" rx="36" fill="#FED7AA"/>
+  
+  <!-- Beanie (Cozy Adventurer) -->
+  <path d="M82 100 C80 44 110 32 128 32 C146 32 176 44 174 100 Z" fill="#F97316"/>
+  <rect x="76" y="88" width="104" height="24" rx="12" fill="#EA580C"/>
+  <circle cx="128" cy="28" r="12" fill="#FDBA74"/>
+  
+  <!-- Eyes -->
+  <circle cx="110" cy="126" r="4.5" fill="#431407"/>
+  <circle cx="146" cy="126" r="4.5" fill="#431407"/>
+  <circle cx="112" cy="124" r="1.5" fill="#FFFFFF"/>
+  <circle cx="148" cy="124" r="1.5" fill="#FFFFFF"/>
+  
+  <!-- Eyebrows -->
+  <path d="M102 116 Q110 112 118 116" stroke="#7C2D12" stroke-width="3" stroke-linecap="round" fill="none"/>
+  <path d="M138 116 Q146 112 154 116" stroke="#7C2D12" stroke-width="3" stroke-linecap="round" fill="none"/>
+  
+  <!-- Big Friendly Smile -->
+  <path d="M116 142 Q128 156 140 142 Z" fill="#DC2626"/>
+  <path d="M118 142 Q128 146 138 142" stroke="#FFFFFF" stroke-width="2" fill="none"/>
+  
+  <!-- Cheeks -->
+  <circle cx="102" cy="136" r="7" fill="#F43F5E" opacity="0.3"/>
+  <circle cx="154" cy="136" r="7" fill="#F43F5E" opacity="0.3"/>
+</svg>

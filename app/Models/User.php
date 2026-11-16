@@ -68,6 +68,13 @@ class User extends Authenticatable implements MustVerifyEmail, PasskeyUser
         ];
     }
 
+    protected static function booted(): void
+    {
+        static::created(function (User $user) {
+            app(\App\Services\UserStarterKitService::class)->setup($user);
+        });
+    }
+
     /**
      * Get user's avatar URL
      */
@@ -80,7 +87,9 @@ class User extends Authenticatable implements MustVerifyEmail, PasskeyUser
             return asset($this->avatar_path);
         }
 
-        return 'https://images.unsplash.com/photo-1534528741775-53994a69daeb?auto=format&fit=crop&w=300&q=80';
+        // Default dynamic vector avatar based on user id/email
+        $seed = (abs(crc32($this->email ?: ($this->name ?: 'user'))) % 6) + 1;
+        return asset("avatars/avatar-{$seed}.svg");
     }
 
     /**

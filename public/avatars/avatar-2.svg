@@ -1,0 +1,50 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 256 256" width="256" height="256">
+  <defs>
+    <linearGradient id="bg2" x1="0%" y1="0%" x2="100%" y2="100%">
+      <stop offset="0%" stop-color="#4A044E"/>
+      <stop offset="100%" stop-color="#9333EA"/>
+    </linearGradient>
+    <linearGradient id="hair2" x1="0%" y1="0%" x2="0%" y2="100%">
+      <stop offset="0%" stop-color="#3B0764"/>
+      <stop offset="100%" stop-color="#1E1B4B"/>
+    </linearGradient>
+  </defs>
+  <!-- Background -->
+  <rect width="256" height="256" rx="128" fill="url(#bg2)"/>
+  
+  <!-- Shoulders & Outfit -->
+  <path d="M54 256 C54 196 90 180 128 180 C166 180 202 196 202 256 Z" fill="#2E1065"/>
+  <path d="M102 180 Q128 206 154 180 Z" fill="#FBCFE8"/>
+  
+  <!-- Neck -->
+  <rect x="114" y="150" width="28" height="38" rx="10" fill="#FED7AA"/>
+  
+  <!-- Bob Hair Back -->
+  <path d="M72 88 C72 44 100 40 128 40 C156 40 184 44 184 88 L190 156 C190 172 174 176 168 152 L164 120 L92 120 L88 152 C82 176 66 172 66 156 Z" fill="url(#hair2)"/>
+  
+  <!-- Face -->
+  <rect x="88" y="82" width="80" height="88" rx="38" fill="#FFEDD5"/>
+  
+  <!-- Bob Hair Front/Bangs -->
+  <path d="M76 86 C82 54 108 46 128 46 C152 46 176 56 180 86 C180 100 172 90 158 86 C140 82 122 84 100 88 C88 90 76 96 76 86 Z" fill="url(#hair2)"/>
+  
+  <!-- Eyes -->
+  <ellipse cx="110" cy="120" rx="4.5" ry="5.5" fill="#3B0764"/>
+  <ellipse cx="146" cy="120" rx="4.5" ry="5.5" fill="#3B0764"/>
+  <circle cx="112" cy="118" r="1.5" fill="#FFFFFF"/>
+  <circle cx="148" cy="118" r="1.5" fill="#FFFFFF"/>
+  
+  <!-- Eyelashes -->
+  <path d="M104 114 Q110 110 116 114" stroke="#3B0764" stroke-width="2.5" stroke-linecap="round" fill="none"/>
+  <path d="M140 114 Q146 110 152 114" stroke="#3B0764" stroke-width="2.5" stroke-linecap="round" fill="none"/>
+  
+  <!-- Blush -->
+  <ellipse cx="102" cy="130" rx="8" ry="4" fill="#F43F5E" opacity="0.35"/>
+  <ellipse cx="154" cy="130" rx="8" ry="4" fill="#F43F5E" opacity="0.35"/>
+  
+  <!-- Smile -->
+  <path d="M120 140 Q128 147 136 140" stroke="#E11D48" stroke-width="3" stroke-linecap="round" fill="none"/>
+  
+  <!-- Star Earring -->
+  <polygon points="76,140 78,144 83,144 79,147 80,152 76,149 72,152 73,147 69,144 74,144" fill="#FDE047"/>
+</svg>

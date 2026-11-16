@@ -115,6 +115,18 @@ class Edit extends Component
         $this->successMessage = 'Profil dan keamanan berhasil diperbarui!';
     }
 
+    public function selectAvatar(int $index): void
+    {
+        if ($index >= 1 && $index <= 6) {
+            $user = Auth::user() ?? User::first();
+            if ($user) {
+                $user->update(['avatar_path' => "avatars/avatar-{$index}.svg"]);
+                $this->avatar = null;
+                $this->successMessage = 'Avatar profil berhasil dipilih!';
+            }
+        }
+    }
+
     public function cancel(): void
     {
         $this->mount();

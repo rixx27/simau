@@ -1,0 +1,50 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 256 256" width="256" height="256">
+  <defs>
+    <linearGradient id="bg1" x1="0%" y1="0%" x2="100%" y2="100%">
+      <stop offset="0%" stop-color="#1E1B4B"/>
+      <stop offset="100%" stop-color="#4F46E5"/>
+    </linearGradient>
+    <linearGradient id="glow1" x1="0%" y1="0%" x2="100%" y2="0%">
+      <stop offset="0%" stop-color="#00E676"/>
+      <stop offset="100%" stop-color="#00F5FF"/>
+    </linearGradient>
+  </defs>
+  <!-- Background -->
+  <rect width="256" height="256" rx="128" fill="url(#bg1)"/>
+  
+  <!-- Shoulders & Clothes -->
+  <path d="M56 256 C56 195 90 178 128 178 C166 178 200 195 200 256 Z" fill="#18181B"/>
+  <path d="M96 182 L128 214 L160 182 L144 256 L112 256 Z" fill="#312E81"/>
+  
+  <!-- Neck -->
+  <rect x="112" y="148" width="32" height="42" rx="12" fill="#FBCFE8"/>
+  
+  <!-- Head & Face -->
+  <rect x="88" y="80" width="80" height="92" rx="40" fill="#FDE2E4"/>
+  
+  <!-- Hair -->
+  <path d="M78 92 C78 48 114 42 128 42 C142 42 178 48 178 92 C178 98 170 94 162 90 C150 84 138 88 128 86 C116 84 104 88 94 90 C86 94 78 98 78 92 Z" fill="#1F2937"/>
+  <path d="M80 88 C76 112 78 126 84 136 C86 118 88 102 96 94 Z" fill="#1F2937"/>
+  
+  <!-- Eyes -->
+  <circle cx="112" cy="122" r="5" fill="#1E1B4B"/>
+  <circle cx="144" cy="122" r="5" fill="#1E1B4B"/>
+  <circle cx="114" cy="120" r="1.5" fill="#FFFFFF"/>
+  <circle cx="146" cy="120" r="1.5" fill="#FFFFFF"/>
+  
+  <!-- Eyebrows -->
+  <path d="M104 112 Q112 110 120 114" stroke="#1F2937" stroke-width="3" stroke-linecap="round" fill="none"/>
+  <path d="M136 114 Q144 110 152 112" stroke="#1F2937" stroke-width="3" stroke-linecap="round" fill="none"/>
+  
+  <!-- Smile -->
+  <path d="M118 144 Q128 152 138 144" stroke="#4B5563" stroke-width="3" stroke-linecap="round" fill="none"/>
+  
+  <!-- Blush -->
+  <circle cx="102" cy="132" r="7" fill="#F43F5E" opacity="0.25"/>
+  <circle cx="154" cy="132" r="7" fill="#F43F5E" opacity="0.25"/>
+  
+  <!-- Headphones (Neo Tech) -->
+  <path d="M72 110 C72 62 100 48 128 48 C156 48 184 62 184 110" stroke="#0F172A" stroke-width="8" stroke-linecap="round" fill="none"/>
+  <rect x="66" y="98" width="16" height="34" rx="8" fill="url(#glow1)"/>
+  <rect x="174" y="98" width="16" height="34" rx="8" fill="url(#glow1)"/>
+</svg>

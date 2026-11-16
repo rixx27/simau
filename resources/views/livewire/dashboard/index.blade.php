@@ -59,8 +59,8 @@
 
                     <a href="{{ route('profile') }}" wire:navigate class="relative block">
                         <img
-                            src="{{ $user?->avatar_url ?? asset('avatars/krisna.png') }}"
-                            alt="Krisna"
+                            src="{{ $user?->avatar_url ?? asset('avatars/avatar-1.svg') }}"
+                            alt="{{ $user?->name ?? 'User' }}"
                             class="w-11 h-11 rounded-full object-cover ring-2 ring-white/40 shadow-md"
                         />
                         <span class="absolute -bottom-0.5 -right-0.5 w-3 h-3 bg-[#00E676] border-2 border-[#4338CA] rounded-full"></span>
@@ -147,7 +147,7 @@
 
                     <!-- 3. Rencana Trip (Buka Hub Trip) -->
                     <a
-                        href="{{ route('tabungan') }}"
+                        href="{{ route('trips.index') }}"
                         wire:navigate
                         class="flex flex-col items-center gap-1.5 group cursor-pointer"
                     >
@@ -200,7 +200,7 @@
                 </div>
 
                 <!-- Pundi Liburan (Terkoneksi ke Trip Aktif) -->
-                <a href="{{ route('tabungan') }}" wire:navigate class="bg-[#17181E] border border-[#262C37] rounded-3xl p-4 flex flex-col justify-between hover:border-[#5865F2]/50 transition-colors group">
+                <a href="{{ route('trips.index') }}" wire:navigate class="bg-[#17181E] border border-[#262C37] rounded-3xl p-4 flex flex-col justify-between hover:border-[#5865F2]/50 transition-colors group">
                     <div class="flex items-center justify-between mb-2">
                         <span class="text-xs font-semibold text-[#9CA3AF] group-hover:text-white transition-colors truncate">
                             {{ $activeTrip ? $activeTrip->destination : 'Pundi Liburan' }}
@@ -302,6 +302,10 @@
                                         <svg class="w-5 h-5" fill="none" viewBox="0 0 24 24" stroke-width="2" stroke="currentColor">
                                             <path stroke-linecap="round" stroke-linejoin="round" d="M12 8.25v-1.5m0 1.5a3.75 3.75 0 0 0 3.75 3.75h1.5a3.75 3.75 0 0 0 3.75-3.75v-1.5m-9 1.5a3.75 3.75 0 0 1-3.75 3.75h-1.5A3.75 3.75 0 0 1 3 8.25v-1.5m9 7.5v4.5m0 0H8.25m3.75 0h3.75" />
                                         </svg>
+                                    @elseif($icon === 'ticket')
+                                        <svg class="w-5 h-5" fill="none" viewBox="0 0 24 24" stroke-width="2" stroke="currentColor">
+                                            <path stroke-linecap="round" stroke-linejoin="round" d="M16.5 6v.75m0 3v.75m0 3v.75m0 3V18m-9-5.25h5.25M7.5 15h3M3.375 5.25c-.621 0-1.125.504-1.125 1.125v3.026a2.999 2.999 0 0 1 0 5.198v3.026c0 .621.504 1.125 1.125 1.125h17.25c.621 0 1.125-.504 1.125-1.125v-3.026a2.999 2.999 0 0 1 0-5.198V6.375c0-.621-.504-1.125-1.125-1.125H3.375Z" />
+                                        </svg>
                                     @else
                                         <svg class="w-5 h-5" fill="none" viewBox="0 0 24 24" stroke-width="2" stroke="currentColor">
                                             <path stroke-linecap="round" stroke-linejoin="round" d="M12 6v12m-3-2.818.879.659c1.171.879 3.07.879 4.242 0 1.172-.879 1.172-2.303 0-3.182C13.536 12.219 12.768 12 12 12c-.725 0-1.45-.22-2.003-.659-1.106-.879-1.106-2.303 0-3.182s2.9-.879 4.006 0l.415.33M21 12a9 9 0 1 1-18 0 9 9 0 0 1 18 0Z" />
@@ -313,8 +317,11 @@
                                     <div class="flex items-center gap-2">
                                         <h4 class="text-sm font-semibold text-white truncate">{{ $tx->title }}</h4>
                                         @if($tx->trip)
-                                            <span class="text-[10px] px-1.5 py-0.5 rounded bg-[#5865F2]/20 text-[#5865F2] border border-[#5865F2]/30 font-semibold truncate">
-                                                ✈️ {{ $tx->trip->destination }}
+                                            <span class="text-[10px] px-1.5 py-0.5 rounded bg-[#5865F2]/20 text-[#5865F2] border border-[#5865F2]/30 font-semibold truncate inline-flex items-center gap-1">
+                                                <svg class="w-3 h-3 text-[#5865F2]" fill="none" viewBox="0 0 24 24" stroke-width="2" stroke="currentColor">
+                                                    <path stroke-linecap="round" stroke-linejoin="round" d="M6 12 3.269 3.125A59.769 59.769 0 0 1 21.485 12 59.768 59.768 0 0 1 3.27 20.875L5.999 12Zm0 0h7.5" />
+                                                </svg>
+                                                {{ $tx->trip->destination }}
                                             </span>
                                         @endif
                                     </div>
