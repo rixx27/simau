@@ -164,7 +164,7 @@
                             <h2 class="text-sm font-bold text-white tracking-tight flex items-center gap-1">
                                 SIMAU
                             </h2>
-                            <p class="text-[10px] text-[#9CA3AF]">Neo Financial</p>
+                            <p class="text-[10px] text-[#9CA3AF]">Sistem Manajemen Uangku</p>
                         </div>
                     </a>
                 </div>
@@ -258,6 +258,9 @@
 
     <!-- GLOBAL CREATE TRANSACTION MODAL -->
     <livewire:transactions.create-modal />
+
+    <!-- GLOBAL DAILY LIMIT MODAL -->
+    <livewire:wallets.daily-limit-modal />
 
     @livewireScripts
 

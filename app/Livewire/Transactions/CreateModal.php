@@ -79,7 +79,7 @@ class CreateModal extends Component
     #[On('open-transaction-modal')]
     public function openModal(string $mode = 'daily', ?int $walletId = null, ?int $tripId = null): void
     {
-        $this->mode = $mode === 'expense' ? 'daily' : ($mode === 'trip' || $mode === 'saving' ? 'trip' : $mode);
+        $this->mode = in_array($mode, ['daily', 'income', 'trip']) ? $mode : 'daily';
         $this->loadDefaults();
 
         if ($walletId) {
@@ -90,13 +90,7 @@ class CreateModal extends Component
             $this->mode = 'trip';
         }
 
-        if ($this->mode === 'trip') {
-            $this->title = $this->title ?: 'Kuliner / Transport Liburan';
-            $this->amount = $this->amount ?: 75000;
-        } else {
-            $this->title = $this->title ?: 'GrabCar ke Stasiun';
-            $this->amount = $this->amount ?: 45000;
-        }
+        $this->setMode($this->mode);
 
         $this->isOpen = true;
     }
@@ -110,15 +104,24 @@ class CreateModal extends Component
 
     public function setMode(string $mode): void
     {
-        $this->mode = $mode;
-        if ($mode === 'trip') {
-            if (empty($this->title) || $this->title === 'GrabCar ke Stasiun') {
-                $this->title = 'Kuliner / Transport Liburan';
-            }
+        $this->mode = in_array($mode, ['daily', 'income', 'trip']) ? $mode : 'daily';
+
+        $isIncome = $this->mode === 'income';
+        $firstCat = Category::where(function ($query) {
+            $query->whereNull('user_id')->orWhere('user_id', Auth::id());
+        })->where('type', $isIncome ? 'income' : 'expense')->first();
+
+        $this->selectedCategoryId = $firstCat?->id;
+
+        if ($this->mode === 'trip') {
+            $this->title = 'Kuliner / Transport Liburan';
+            $this->amount = $this->amount ?: 75000;
+        } elseif ($this->mode === 'income') {
+            $this->title = 'Pemasukan Kas';
+            $this->amount = $this->amount ?: 250000;
         } else {
-            if ($this->title === 'Kuliner / Transport Liburan') {
-                $this->title = 'GrabCar ke Stasiun';
-            }
+            $this->title = 'Pengeluaran Harian';
+            $this->amount = $this->amount ?: 45000;
         }
     }
 
@@ -184,7 +187,9 @@ class CreateModal extends Component
             'amount.min' => 'Nominal minimal Rp 1.000.',
         ]);
 
-        DB::transaction(function () use ($user) {
+        $isIncome = $this->mode === 'income';
+
+        DB::transaction(function () use ($user, $isIncome) {
             $wallet = Wallet::lockForUpdate()->findOrFail($this->selectedWalletId);
             $category = Category::find($this->selectedCategoryId);
 
@@ -193,19 +198,24 @@ class CreateModal extends Component
                 'wallet_id' => $wallet->id,
                 'trip_id' => $this->mode === 'trip' ? $this->selectedTripId : null,
                 'category_id' => $category?->id,
-                'type' => 'expense',
+                'type' => $isIncome ? 'income' : 'expense',
                 'amount' => $this->amount,
                 'title' => $this->title,
                 'note' => $this->note ?: null,
                 'transaction_date' => Carbon::parse($this->transactionDate),
             ]);
 
-            // Deduct balance from wallet
-            $wallet->decrement('current_balance', $this->amount);
+            if ($isIncome) {
+                // Tambah saldo ke dompet kas
+                $wallet->increment('current_balance', $this->amount);
+            } else {
+                // Kurangi saldo dari dompet
+                $wallet->decrement('current_balance', $this->amount);
+            }
         });
 
         $this->dispatch('transaction-saved');
-        $this->dispatch('notify', message: 'Transaksi berhasil dicatat!');
+        $this->dispatch('notify', message: $isIncome ? 'Pemasukan berhasil ditambahkan ke saldo kas!' : 'Pengeluaran berhasil dicatat!');
         $this->closeModal();
     }
 
@@ -214,11 +224,13 @@ class CreateModal extends Component
         $user = Auth::user() ?? User::first();
         $userId = $user?->id;
 
+        $isIncome = $this->mode === 'income';
+
         $wallets = Wallet::where('user_id', $userId)->get();
         $trips = Trip::where('user_id', $userId)->orderByRaw("CASE WHEN status = 'active' THEN 1 WHEN status = 'planned' THEN 2 ELSE 3 END")->get();
         $categories = Category::where(function ($query) use ($userId) {
             $query->whereNull('user_id')->orWhere('user_id', $userId);
-        })->where('type', 'expense')->get();
+        })->where('type', $isIncome ? 'income' : 'expense')->get();
 
         $selectedWallet = $wallets->firstWhere('id', $this->selectedWalletId);
         $selectedTrip = $trips->firstWhere('id', $this->selectedTripId);

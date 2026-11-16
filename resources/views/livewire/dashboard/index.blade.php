@@ -3,7 +3,7 @@
     <div class="hidden md:flex items-center justify-between mb-6">
         <div>
             <h1 class="text-2xl font-bold tracking-tight text-white flex items-center gap-2">
-                Halo, {{ $user?->name ?? 'Krisna' }}! 👋
+                Halo, {{ $user?->name ?? 'Krisna' }}!
             </h1>
             <p class="text-sm text-[#9CA3AF]">
                 Buku catatan pengeluaran harian dan anggaran liburan Anda.
@@ -115,7 +115,7 @@
 
                 <!-- Bottom Row: 4 Quick Action Buttons (Refactored from fake transfer to Travel Ledger) -->
                 <div class="relative z-10 pt-4 border-t border-white/20 grid grid-cols-4 gap-2 text-center">
-                    <!-- 1. Catat + (Harian) -->
+                    <!-- 1. Catat Pengeluaran (Harian) -->
                     <button
                         type="button"
                         x-data
@@ -124,25 +124,25 @@
                     >
                         <div class="w-12 h-12 rounded-2xl bg-white/20 group-hover:bg-white/30 backdrop-blur-md flex items-center justify-center transition-all duration-150 shadow-md">
                             <svg class="w-6 h-6 text-white" fill="none" viewBox="0 0 24 24" stroke-width="2.5" stroke="currentColor">
-                                <path stroke-linecap="round" stroke-linejoin="round" d="M12 4.5v15m7.5-7.5h-15" />
+                                <path stroke-linecap="round" stroke-linejoin="round" d="M19.5 12h-15" />
                             </svg>
                         </div>
-                        <span class="text-[11px] font-medium text-white/90">Catat +</span>
+                        <span class="text-[11px] font-medium text-white/90">Catat -</span>
                     </button>
 
-                    <!-- 2. Trip + (Catat Pengeluaran Liburan) -->
+                    <!-- 2. + Kas (Tambah Saldo Kas / Pemasukan) -->
                     <button
                         type="button"
                         x-data
-                        @click="$dispatch('open-transaction-modal', { mode: 'trip' })"
+                        @click="$dispatch('open-transaction-modal', { mode: 'income' })"
                         class="flex flex-col items-center gap-1.5 group cursor-pointer"
                     >
-                        <div class="w-12 h-12 rounded-2xl bg-white/20 group-hover:bg-white/30 backdrop-blur-md flex items-center justify-center transition-all duration-150 shadow-md">
-                            <svg class="w-6 h-6 text-white" fill="none" viewBox="0 0 24 24" stroke-width="2.2" stroke="currentColor">
-                                <path stroke-linecap="round" stroke-linejoin="round" d="M6 12 3.269 3.125A59.769 59.769 0 0 1 21.485 12 59.768 59.768 0 0 1 3.27 20.875L5.999 12Zm0 0h7.5" />
+                        <div class="w-12 h-12 rounded-2xl bg-[#00E676]/25 group-hover:bg-[#00E676]/40 backdrop-blur-md flex items-center justify-center transition-all duration-150 shadow-md">
+                            <svg class="w-6 h-6 text-[#00E676]" fill="none" viewBox="0 0 24 24" stroke-width="2.5" stroke="currentColor">
+                                <path stroke-linecap="round" stroke-linejoin="round" d="M12 4.5v15m7.5-7.5h-15" />
                             </svg>
                         </div>
-                        <span class="text-[11px] font-medium text-white/90">Trip +</span>
+                        <span class="text-[11px] font-semibold text-[#00E676]">+ Kas</span>
                     </button>
 
                     <!-- 3. Rencana Trip (Buka Hub Trip) -->
@@ -177,33 +177,54 @@
 
             <!-- 2. TWO-COLUMN SUMMARY CARDS (Batas Harian & Pundi Liburan Aktif) -->
             <div class="grid grid-cols-2 gap-3.5">
-                <!-- Batas Harian -->
-                <div class="bg-[#17181E] border border-[#262C37] rounded-3xl p-4 flex flex-col justify-between relative overflow-hidden">
+                <!-- Batas Harian (Bisa Diklik untuk Atur Limit) -->
+                <button
+                    type="button"
+                    x-data
+                    @click="$dispatch('open-daily-limit-modal')"
+                    class="text-left w-full bg-[#17181E] border border-[#262C37] hover:border-[#5865F2]/50 rounded-3xl p-4 flex flex-col justify-between relative overflow-hidden transition-all duration-200 group cursor-pointer"
+                    title="Klik untuk mengatur batas pengeluaran harian"
+                >
                     <div class="flex items-center justify-between mb-2">
-                        <span class="text-xs font-semibold text-[#9CA3AF]">Batas Harian</span>
-                        <span class="w-2.5 h-2.5 rounded-full bg-[#00E676] shadow-[0_0_8px_#00E676]"></span>
+                        <span class="text-xs font-semibold text-[#9CA3AF] group-hover:text-white transition-colors flex items-center gap-1.5">
+                            <span>Batas Harian</span>
+                            <svg class="w-3.5 h-3.5 text-[#5865F2] opacity-70 group-hover:opacity-100 transition-opacity" fill="none" viewBox="0 0 24 24" stroke-width="2" stroke="currentColor">
+                                <path stroke-linecap="round" stroke-linejoin="round" d="m16.862 4.487 1.687-1.688a1.875 1.875 0 1 1 2.652 2.652L10.582 16.07a4.5 4.5 0 0 1-1.897 1.13L6 18l.8-2.685a4.5 4.5 0 0 1 1.13-1.897l8.932-8.931Zm0 0L19.5 7.125M18 14v4.75A2.25 2.25 0 0 1 15.75 21H5.25A2.25 2.25 0 0 1 3 18.75V8.25A2.25 2.25 0 0 1 5.25 6H10" />
+                            </svg>
+                        </span>
+                        <span class="w-2.5 h-2.5 rounded-full {{ $dailyPercentRemaining <= 0 ? 'bg-red-500 shadow-[0_0_8px_#EF4444]' : ($dailyPercentRemaining <= 20 ? 'bg-amber-400 shadow-[0_0_8px_#F59E0B]' : 'bg-[#00E676] shadow-[0_0_8px_#00E676]') }}"></span>
                     </div>
 
                     <div class="my-1">
                         <span class="text-lg font-bold text-white font-mono-numbers">
-                            Rp {{ number_format($dailyLimit, 0, ',', '.') }}
+                            @if($dailyLimit)
+                                Rp {{ number_format($dailyLimit, 0, ',', '.') }}
+                            @else
+                                <span class="text-sm text-[#9CA3AF] font-medium">Nonaktif</span>
+                            @endif
                         </span>
                     </div>
 
                     <div>
                         <!-- Progress bar -->
                         <div class="w-full h-1.5 bg-[#262C37] rounded-full overflow-hidden mb-1.5">
-                            <div class="h-full bg-gradient-to-r from-blue-500 to-[#5865F2] rounded-full" style="width: {{ $dailyPercentRemaining }}%"></div>
+                            <div class="h-full {{ $dailyPercentRemaining <= 0 ? 'bg-red-500' : ($dailyPercentRemaining <= 20 ? 'bg-amber-400' : 'bg-gradient-to-r from-blue-500 to-[#5865F2]') }} rounded-full" style="width: {{ $dailyPercentRemaining }}%"></div>
                         </div>
-                        <span class="text-[11px] text-[#9CA3AF] font-medium">Tersisa {{ $dailyPercentRemaining }}%</span>
+                        <span class="text-[11px] text-[#9CA3AF] font-medium group-hover:text-[#5865F2] transition-colors">
+                            @if($dailyLimit)
+                                Tersisa {{ $dailyPercentRemaining }}% &bull; <span class="underline underline-offset-2">Ubah</span>
+                            @else
+                                Klik untuk atur batas
+                            @endif
+                        </span>
                     </div>
-                </div>
+                </button>
 
-                <!-- Pundi Liburan (Terkoneksi ke Trip Aktif) -->
-                <a href="{{ route('trips.index') }}" wire:navigate class="bg-[#17181E] border border-[#262C37] rounded-3xl p-4 flex flex-col justify-between hover:border-[#5865F2]/50 transition-colors group">
+                <!-- Pundi Liburan / Tabungan Aktif -->
+                <a href="{{ $activeTrip ? route('trips.index') : route('tabungan') }}" wire:navigate class="bg-[#17181E] border border-[#262C37] rounded-3xl p-4 flex flex-col justify-between hover:border-[#5865F2]/50 transition-colors group">
                     <div class="flex items-center justify-between mb-2">
                         <span class="text-xs font-semibold text-[#9CA3AF] group-hover:text-white transition-colors truncate">
-                            {{ $activeTrip ? $activeTrip->destination : 'Pundi Liburan' }}
+                            {{ $tripName }}
                         </span>
                         <svg class="w-4 h-4 text-[#9CA3AF] group-hover:text-[#00E676] transition-colors flex-shrink-0" fill="none" viewBox="0 0 24 24" stroke-width="2" stroke="currentColor">
                             <path stroke-linecap="round" stroke-linejoin="round" d="M6 12 3.269 3.125A59.769 59.769 0 0 1 21.485 12 59.768 59.768 0 0 1 3.27 20.875L5.999 12Zm0 0h7.5" />

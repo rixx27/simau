@@ -26,6 +26,7 @@ class History extends Component
     public function selectWeek(?int $week): void
     {
         $this->selectedWeek = $this->selectedWeek === $week ? null : $week;
+        $this->dispatch('week-selected', week: $this->selectedWeek);
     }
 
     #[On('transaction-saved')]

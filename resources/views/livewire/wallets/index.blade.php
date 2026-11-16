@@ -82,8 +82,11 @@
                     @endphp
                     <div class="bg-[#17181E] border border-[#262C37] hover:border-[#5865F2]/50 rounded-3xl p-5 flex flex-col justify-between transition-all duration-200 group relative overflow-hidden">
                         @if($isCompleted)
-                            <div class="absolute top-0 right-0 bg-[#00E676] text-black text-[10px] font-extrabold uppercase px-3 py-0.5 rounded-bl-xl shadow-md">
-                                🎯 Target Tercapai!
+                            <div class="absolute top-0 right-0 bg-[#00E676] text-black text-[10px] font-extrabold uppercase px-3 py-0.5 rounded-bl-xl shadow-md flex items-center gap-1">
+                                <svg class="w-3 h-3" fill="none" viewBox="0 0 24 24" stroke-width="2.5" stroke="currentColor">
+                                    <path stroke-linecap="round" stroke-linejoin="round" d="m4.5 12.75 6 6 9-13.5" />
+                                </svg>
+                                <span>Target Tercapai!</span>
                             </div>
                         @endif
 
@@ -190,25 +193,54 @@
                                 <span class="text-2xl font-extrabold text-white font-mono-numbers block">
                                     {{ $op->formatted_balance }}
                                 </span>
-                                @if($op->daily_limit)
-                                    <span class="text-xs text-[#9CA3AF] mt-0.5 block">
-                                        Batas Harian: <span class="text-white font-medium">{{ $op->formatted_daily_limit }}</span>
+                                <div class="flex items-center justify-between mt-2 pt-2 border-t border-[#262C37]/40">
+                                    <span class="text-xs text-[#9CA3AF]">
+                                        Batas Harian: 
+                                        @if($op->daily_limit)
+                                            <span class="text-white font-medium">{{ $op->formatted_daily_limit }}</span>
+                                        @else
+                                            <span class="text-[#9CA3AF] italic">Nonaktif</span>
+                                        @endif
                                     </span>
-                                @endif
+                                    <button
+                                        type="button"
+                                        x-data
+                                        @click="$dispatch('open-daily-limit-modal', { walletId: {{ $op->id }} })"
+                                        class="inline-flex items-center gap-1 text-[11px] font-semibold text-[#5865F2] hover:text-[#7983F5] transition-colors py-0.5 px-2 rounded-lg bg-[#5865F2]/10 hover:bg-[#5865F2]/20 border border-[#5865F2]/20 cursor-pointer"
+                                        title="Atur Batas Pengeluaran Harian"
+                                    >
+                                        <svg class="w-3 h-3" fill="none" viewBox="0 0 24 24" stroke-width="2" stroke="currentColor">
+                                            <path stroke-linecap="round" stroke-linejoin="round" d="m16.862 4.487 1.687-1.688a1.875 1.875 0 1 1 2.652 2.652L10.582 16.07a4.5 4.5 0 0 1-1.897 1.13L6 18l.8-2.685a4.5 4.5 0 0 1 1.13-1.897l8.932-8.931Zm0 0L19.5 7.125M18 14v4.75A2.25 2.25 0 0 1 15.75 21H5.25A2.25 2.25 0 0 1 3 18.75V8.25A2.25 2.25 0 0 1 5.25 6H10" />
+                                        </svg>
+                                        <span>Ubah</span>
+                                    </button>
+                                </div>
                             </div>
                         </div>
 
-                        <div class="pt-3 border-t border-[#262C37]/60 mt-3">
+                        <div class="pt-3 border-t border-[#262C37]/60 mt-3 grid grid-cols-2 gap-2">
+                            <button
+                                type="button"
+                                x-data
+                                @click="$dispatch('open-transaction-modal', { mode: 'income', walletId: {{ $op->id }} })"
+                                class="py-2.5 px-2 rounded-xl bg-[#00E676]/15 hover:bg-[#00E676] border border-[#00E676]/40 text-xs font-semibold text-[#00E676] hover:text-black transition-all flex items-center justify-center gap-1 cursor-pointer"
+                            >
+                                <svg class="w-3.5 h-3.5" fill="none" viewBox="0 0 24 24" stroke-width="2.5" stroke="currentColor">
+                                    <path stroke-linecap="round" stroke-linejoin="round" d="M12 4.5v15m7.5-7.5h-15" />
+                                </svg>
+                                <span> Tambah Kas</span>
+                            </button>
+
                             <button
                                 type="button"
                                 x-data
                                 @click="$dispatch('open-transaction-modal', { mode: 'daily', walletId: {{ $op->id }} })"
-                                class="w-full py-2.5 px-3 rounded-xl bg-[#0D0E12] hover:bg-[#5865F2] border border-[#262C37] hover:border-[#5865F2] text-xs font-semibold text-white transition-all flex items-center justify-center gap-1.5 cursor-pointer"
+                                class="py-2.5 px-2 rounded-xl bg-[#0D0E12] hover:bg-[#5865F2] border border-[#262C37] hover:border-[#5865F2] text-xs font-semibold text-white transition-all flex items-center justify-center gap-1 cursor-pointer"
                             >
-                                <svg class="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke-width="2.5" stroke="currentColor">
-                                    <path stroke-linecap="round" stroke-linejoin="round" d="M12 4.5v15m7.5-7.5h-15" />
+                                <svg class="w-3.5 h-3.5" fill="none" viewBox="0 0 24 24" stroke-width="2.5" stroke="currentColor">
+                                    <path stroke-linecap="round" stroke-linejoin="round" d="M5 12h14" />
                                 </svg>
-                                <span>Catat Pengeluaran</span>
+                                <span>Pengeluaran</span>
                             </button>
                         </div>
                     </div>

@@ -19,12 +19,25 @@
                 <!-- Modal Header -->
                 <div class="px-5 pt-3 pb-4 flex items-center justify-between border-b border-[#262C37]/60">
                     <div class="flex items-center gap-3">
-                        <div class="w-9 h-9 rounded-xl bg-[#5865F2]/20 border border-[#5865F2]/40 flex items-center justify-center text-[#5865F2]">
-                            <svg class="w-5 h-5" fill="none" viewBox="0 0 24 24" stroke-width="2" stroke="currentColor">
-                                <path stroke-linecap="round" stroke-linejoin="round" d="m16.862 4.487 1.687-1.688a1.875 1.875 0 1 1 2.652 2.652L10.582 16.07a4.5 4.5 0 0 1-1.897 1.13L6 18l.8-2.685a4.5 4.5 0 0 1 1.13-1.897l8.932-8.931Zm0 0L19.5 7.125M18 14v4.75A2.25 2.25 0 0 1 15.75 21H5.25A2.25 2.25 0 0 1 3 18.75V8.25A2.25 2.25 0 0 1 5.25 6H10" />
-                            </svg>
+                        <div class="w-9 h-9 rounded-xl {{ $mode === 'income' ? 'bg-[#00E676]/20 border border-[#00E676]/40 text-[#00E676]' : 'bg-[#5865F2]/20 border border-[#5865F2]/40 text-[#5865F2]' }} flex items-center justify-center">
+                            @if($mode === 'income')
+                                <svg class="w-5 h-5" fill="none" viewBox="0 0 24 24" stroke-width="2.5" stroke="currentColor">
+                                    <path stroke-linecap="round" stroke-linejoin="round" d="M12 4.5v15m7.5-7.5h-15" />
+                                </svg>
+                            @else
+                                <svg class="w-5 h-5" fill="none" viewBox="0 0 24 24" stroke-width="2" stroke="currentColor">
+                                    <path stroke-linecap="round" stroke-linejoin="round" d="m16.862 4.487 1.687-1.688a1.875 1.875 0 1 1 2.652 2.652L10.582 16.07a4.5 4.5 0 0 1-1.897 1.13L6 18l.8-2.685a4.5 4.5 0 0 1 1.13-1.897l8.932-8.931Zm0 0L19.5 7.125M18 14v4.75A2.25 2.25 0 0 1 15.75 21H5.25A2.25 2.25 0 0 1 3 18.75V8.25A2.25 2.25 0 0 1 5.25 6H10" />
+                                </svg>
+                            @endif
                         </div>
-                        <h3 class="text-base font-bold text-white tracking-tight">Catat Transaksi Baru</h3>
+                        <div>
+                            <h3 class="text-base font-bold text-white tracking-tight">
+                                {{ $mode === 'income' ? 'Tambah Uang ke Kas (Pemasukan)' : ($mode === 'trip' ? 'Catat Pengeluaran Trip' : 'Catat Pengeluaran Harian') }}
+                            </h3>
+                            <p class="text-[11px] text-[#9CA3AF]">
+                                {{ $mode === 'income' ? 'Saldo kas akan bertambah secara otomatis' : 'Saldo kas akan dipotong sesuai nominal' }}
+                            </p>
+                        </div>
                     </div>
 
                     <button
@@ -40,46 +53,62 @@
 
                 <!-- Scrollable Body -->
                 <div class="px-5 py-4 overflow-y-auto space-y-4">
-                    <!-- Mode Switcher: Pengeluaran Harian vs Pengeluaran Trip -->
+                    <!-- Mode Switcher: Harian vs Pemasukan Kas vs Trip -->
                     <div class="bg-[#0D0E12] p-1.5 rounded-2xl flex border border-[#262C37]/80 gap-1.5">
                         <button
                             type="button"
                             wire:click="setMode('daily')"
-                            class="flex-1 py-2.5 px-3 rounded-xl text-xs font-semibold flex items-center justify-center gap-1.5 transition-all duration-200 {{ $mode === 'daily' ? 'bg-[#5865F2] text-white shadow-lg shadow-[#5865F2]/30' : 'text-[#9CA3AF] hover:text-white' }}"
+                            class="flex-1 py-2 px-2 rounded-xl text-xs font-semibold flex items-center justify-center gap-1.5 transition-all duration-200 {{ $mode === 'daily' ? 'bg-[#5865F2] text-white shadow-lg shadow-[#5865F2]/30' : 'text-[#9CA3AF] hover:text-white' }}"
                         >
-                            <svg class="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke-width="2.5" stroke="currentColor">
-                                <path stroke-linecap="round" stroke-linejoin="round" d="M12 6v6h4.5m4.5 0a9 9 0 1 1-18 0 9 9 0 0 1 18 0Z" />
+                            <svg class="w-3.5 h-3.5" fill="none" viewBox="0 0 24 24" stroke-width="2.5" stroke="currentColor">
+                                <path stroke-linecap="round" stroke-linejoin="round" d="M19.5 12h-15" />
                             </svg>
-                            <span>Pengeluaran Harian</span>
+                            <span>Harian</span>
+                        </button>
+                        <button
+                            type="button"
+                            wire:click="setMode('income')"
+                            class="flex-1 py-2 px-2 rounded-xl text-xs font-semibold flex items-center justify-center gap-1.5 transition-all duration-200 {{ $mode === 'income' ? 'bg-[#00E676] text-black font-bold shadow-lg shadow-[#00E676]/30' : 'text-[#9CA3AF] hover:text-white' }}"
+                        >
+                            <svg class="w-3.5 h-3.5" fill="none" viewBox="0 0 24 24" stroke-width="2.5" stroke="currentColor">
+                                <path stroke-linecap="round" stroke-linejoin="round" d="M12 4.5v15m7.5-7.5h-15" />
+                            </svg>
+                            <span>+ Pemasukan</span>
                         </button>
                         <button
                             type="button"
                             wire:click="setMode('trip')"
-                            class="flex-1 py-2.5 px-3 rounded-xl text-xs font-semibold flex items-center justify-center gap-1.5 transition-all duration-200 {{ $mode === 'trip' ? 'bg-[#5865F2] text-white shadow-lg shadow-[#5865F2]/30' : 'text-[#9CA3AF] hover:text-white' }}"
+                            class="flex-1 py-2 px-2 rounded-xl text-xs font-semibold flex items-center justify-center gap-1.5 transition-all duration-200 {{ $mode === 'trip' ? 'bg-[#5865F2] text-white shadow-lg shadow-[#5865F2]/30' : 'text-[#9CA3AF] hover:text-white' }}"
                         >
-                            <svg class="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke-width="2" stroke="currentColor">
+                            <svg class="w-3.5 h-3.5" fill="none" viewBox="0 0 24 24" stroke-width="2" stroke="currentColor">
                                 <path stroke-linecap="round" stroke-linejoin="round" d="M6 12 3.269 3.125A59.769 59.769 0 0 1 21.485 12 59.768 59.768 0 0 1 3.27 20.875L5.999 12Zm0 0h7.5" />
                             </svg>
-                            <span>Pengeluaran Trip</span>
+                            <span>Trip</span>
                         </button>
                     </div>
 
                     <!-- Nominal Transaksi Card -->
-                    <div class="bg-[#0D0E12] border border-[#262C37] rounded-2xl p-4">
+                    <div class="bg-[#0D0E12] border {{ $mode === 'income' ? 'border-[#00E676]/40' : 'border-[#262C37]' }} rounded-2xl p-4 transition-colors">
                         <div class="flex items-center justify-between mb-2">
-                            <span class="text-[11px] font-semibold text-[#9CA3AF] uppercase tracking-wider">Nominal Transaksi</span>
-                            <span class="text-[10px] font-bold px-2 py-0.5 rounded bg-[#17181E] border border-[#262C37] text-[#9CA3AF]">IDR</span>
+                            <span class="text-[11px] font-semibold text-[#9CA3AF] uppercase tracking-wider">
+                                {{ $mode === 'income' ? 'Nominal Uang Masuk ke Kas' : 'Nominal Transaksi' }}
+                            </span>
+                            <span class="text-[10px] font-bold px-2 py-0.5 rounded {{ $mode === 'income' ? 'bg-[#00E676]/20 border border-[#00E676]/40 text-[#00E676]' : 'bg-[#17181E] border border-[#262C37] text-[#9CA3AF]' }}">
+                                {{ $mode === 'income' ? '+ UANG MASUK' : 'IDR' }}
+                            </span>
                         </div>
 
                         <!-- Amount Input with Rp formatting -->
                         <div class="flex items-baseline justify-center py-2">
-                            <span class="text-2xl md:text-3xl font-extrabold text-white mr-1">Rp</span>
+                            <span class="text-2xl md:text-3xl font-extrabold mr-1 {{ $mode === 'income' ? 'text-[#00E676]' : 'text-white' }}">
+                                {{ $mode === 'income' ? '+Rp' : 'Rp' }}
+                            </span>
                             <input
                                 type="number"
                                 wire:model.live="amount"
                                 step="1000"
                                 min="0"
-                                class="w-44 md:w-56 text-2xl md:text-3xl font-extrabold text-white bg-transparent border-0 focus:ring-0 p-0 font-mono-numbers focus:outline-none"
+                                class="w-44 md:w-56 text-2xl md:text-3xl font-extrabold bg-transparent border-0 focus:ring-0 p-0 font-mono-numbers focus:outline-none {{ $mode === 'income' ? 'text-[#00E676]' : 'text-white' }}"
                                 placeholder="0"
                             />
                         </div>
@@ -88,27 +117,34 @@
                         @enderror
 
                         <!-- Quick Increment Buttons -->
-                        <div class="flex items-center justify-center gap-2 pt-2 border-t border-[#262C37]/50 mt-2">
-                            <button
-                                type="button"
-                                wire:click="addAmount(10000)"
-                                class="px-3 py-1.5 rounded-lg bg-[#17181E] hover:bg-[#262C37] text-xs font-medium text-[#9CA3AF] hover:text-white transition-colors cursor-pointer"
-                            >
-                                +Rp 10.000
-                            </button>
+                        <div class="flex items-center justify-center gap-1.5 pt-2 border-t border-[#262C37]/50 mt-2 flex-wrap">
                             <button
                                 type="button"
                                 wire:click="addAmount(50000)"
-                                class="px-3 py-1.5 rounded-lg bg-[#17181E] hover:bg-[#262C37] text-xs font-medium text-[#9CA3AF] hover:text-white transition-colors cursor-pointer"
+                                class="px-2.5 py-1.5 rounded-lg bg-[#17181E] hover:bg-[#262C37] text-xs font-medium text-[#9CA3AF] hover:text-white transition-colors cursor-pointer"
                             >
-                                +Rp 50.000
+                                +50rb
                             </button>
                             <button
                                 type="button"
                                 wire:click="addAmount(100000)"
-                                class="px-3 py-1.5 rounded-lg bg-[#17181E] hover:bg-[#262C37] text-xs font-medium text-[#9CA3AF] hover:text-white transition-colors cursor-pointer"
+                                class="px-2.5 py-1.5 rounded-lg bg-[#17181E] hover:bg-[#262C37] text-xs font-medium text-[#9CA3AF] hover:text-white transition-colors cursor-pointer"
                             >
-                                +Rp 100.000
+                                +100rb
+                            </button>
+                            <button
+                                type="button"
+                                wire:click="addAmount(500000)"
+                                class="px-2.5 py-1.5 rounded-lg bg-[#17181E] hover:bg-[#262C37] text-xs font-medium text-[#9CA3AF] hover:text-white transition-colors cursor-pointer"
+                            >
+                                +500rb
+                            </button>
+                            <button
+                                type="button"
+                                wire:click="addAmount(1000000)"
+                                class="px-2.5 py-1.5 rounded-lg bg-[#17181E] hover:bg-[#262C37] text-xs font-medium text-[#9CA3AF] hover:text-white transition-colors cursor-pointer"
+                            >
+                                +1 Jt
                             </button>
                         </div>
                     </div>
@@ -156,7 +192,7 @@
                     <!-- Category Grid -->
                     <div>
                         <div class="flex items-center justify-between mb-2">
-                            <span class="text-xs font-semibold text-white">Pilih Kategori</span>
+                            <span class="text-xs font-semibold text-white">{{ $mode === 'income' ? 'Pilih Kategori Pemasukan' : 'Pilih Kategori' }}</span>
                             <span class="text-[11px] text-[#9CA3AF]">Wajib dipilih</span>
                         </div>
 
@@ -168,10 +204,10 @@
                                 <button
                                     type="button"
                                     wire:click="selectCategory({{ $cat->id }})"
-                                    class="relative flex flex-col items-center justify-center p-3 rounded-2xl border transition-all duration-150 cursor-pointer {{ $isSelected ? 'bg-[#5865F2]/15 border-[#5865F2] ring-1 ring-[#5865F2]' : 'bg-[#0D0E12] border-[#262C37] hover:border-[#5865F2]/40 hover:bg-[#1E2028]' }}"
+                                    class="relative flex flex-col items-center justify-center p-3 rounded-2xl border transition-all duration-150 cursor-pointer {{ $isSelected ? ($mode === 'income' ? 'bg-[#00E676]/15 border-[#00E676] ring-1 ring-[#00E676]' : 'bg-[#5865F2]/15 border-[#5865F2] ring-1 ring-[#5865F2]') : 'bg-[#0D0E12] border-[#262C37] hover:border-[#5865F2]/40 hover:bg-[#1E2028]' }}"
                                 >
                                     @if($isSelected)
-                                        <span class="absolute top-2 right-2 w-2 h-2 rounded-full bg-[#5865F2]"></span>
+                                        <span class="absolute top-2 right-2 w-2 h-2 rounded-full {{ $mode === 'income' ? 'bg-[#00E676]' : 'bg-[#5865F2]' }}"></span>
                                     @endif
 
                                     <div class="w-9 h-9 rounded-xl flex items-center justify-center mb-1.5" style="background-color: {{ $cat->color }}20; color: {{ $cat->color }};">
@@ -194,6 +230,22 @@
                                         @elseif($cat->icon === 'coffee')
                                             <svg class="w-5 h-5" fill="none" viewBox="0 0 24 24" stroke-width="2" stroke="currentColor">
                                                 <path stroke-linecap="round" stroke-linejoin="round" d="M12 8.25v-1.5m0 1.5a3.75 3.75 0 0 0 3.75 3.75h1.5a3.75 3.75 0 0 0 3.75-3.75v-1.5m-9 1.5a3.75 3.75 0 0 1-3.75 3.75h-1.5A3.75 3.75 0 0 1 3 8.25v-1.5m9 7.5v4.5m0 0H8.25m3.75 0h3.75" />
+                                            </svg>
+                                        @elseif($cat->icon === 'wallet')
+                                            <svg class="w-5 h-5" fill="none" viewBox="0 0 24 24" stroke-width="2" stroke="currentColor">
+                                                <path stroke-linecap="round" stroke-linejoin="round" d="M21 12a2.25 2.25 0 0 0-2.25-2.25H15a3 3 0 1 1-6 0H5.25A2.25 2.25 0 0 0 3 12m18 0v6a2.25 2.25 0 0 1-2.25 2.25H5.25A2.25 2.25 0 0 1 3 18v-6m18 0V9M3 12V9m18 0a2.25 2.25 0 0 0-2.25-2.25H5.25A2.25 2.25 0 0 0 3 9m18 0V6a2.25 2.25 0 0 0-2.25-2.25H5.25A2.25 2.25 0 0 0 3 6v3" />
+                                            </svg>
+                                        @elseif($cat->icon === 'banknotes')
+                                            <svg class="w-5 h-5" fill="none" viewBox="0 0 24 24" stroke-width="2" stroke="currentColor">
+                                                <path stroke-linecap="round" stroke-linejoin="round" d="M2.25 18.75a60.07 60.07 0 0 1 15.797 2.101c.727.198 1.453-.342 1.453-1.096V18.75M3.75 4.5v.75A.75.75 0 0 1 3 6H2.25m0 0v8.25m0 0a60.207 60.207 0 0 1 15.797 2.101c.727.198 1.453-.342 1.453-1.096V14.25m-17.25-6H3m0 0a60.07 60.07 0 0 1 15.797 2.101c.727.198 1.453-.342 1.453-1.096V8.25m-17.25 0V6m17.25 8.25V6m0 0a60.207 60.207 0 0 1 1.75-2.101" />
+                                            </svg>
+                                        @elseif($cat->icon === 'gift')
+                                            <svg class="w-5 h-5" fill="none" viewBox="0 0 24 24" stroke-width="2" stroke="currentColor">
+                                                <path stroke-linecap="round" stroke-linejoin="round" d="M21 11.25v8.25a1.5 1.5 0 0 1-1.5 1.5H4.5a1.5 1.5 0 0 1-1.5-1.5v-8.25M12 4.875A2.625 2.625 0 1 0 9.375 7.5H12m0-2.625V7.5m0-2.625A2.625 2.625 0 1 1 14.625 7.5H12m0 0V21m-8.625-9.75h17.25c.621 0 1.125-.504 1.125-1.125v-1.5c0-.621-.504-1.125-1.125-1.125H3.375c-.621 0-1.125.504-1.125 1.125v1.5c0 .621.504 1.125 1.125 1.125Z" />
+                                            </svg>
+                                        @elseif($cat->icon === 'credit-card')
+                                            <svg class="w-5 h-5" fill="none" viewBox="0 0 24 24" stroke-width="2" stroke="currentColor">
+                                                <path stroke-linecap="round" stroke-linejoin="round" d="M2.25 8.25h19.5M2.25 9h19.5m-16.5 5.25h6m-6 2.25h3m-3.75 3h15a2.25 2.25 0 0 0 2.25-2.25V6.75A2.25 2.25 0 0 0 19.5 4.5h-15A2.25 2.25 0 0 0 2.25 6.75v10.5A2.25 2.25 0 0 0 4.5 19.5Z" />
                                             </svg>
                                         @else
                                             <svg class="w-5 h-5" fill="none" viewBox="0 0 24 24" stroke-width="2" stroke="currentColor">
@@ -262,7 +314,7 @@
                     <!-- Sumber Dana Transaksi -->
                     <div>
                         <label class="block text-xs font-semibold text-white mb-1.5">
-                            Sumber Dana (Kas / Dompet)
+                            {{ $mode === 'income' ? 'Rekening Kas Penerima' : 'Sumber Dana (Kas / Dompet)' }}
                         </label>
                         <div class="relative">
                             <select
@@ -294,7 +346,7 @@
                         <input
                             type="text"
                             wire:model="title"
-                            placeholder="Contoh: Tiket Kereta, Gudeg Yu Djum, GrabCar..."
+                            placeholder="{{ $mode === 'income' ? 'Contoh: Gaji Bulanan, Uang Saku, Saldo Awal Kas...' : ($mode === 'trip' ? 'Contoh: Tiket Kereta, Penginapan, Kuliner...' : 'Contoh: Sarapan Pagi, Bensin, Kopi...') }}"
                             class="w-full bg-transparent border-0 text-sm text-white focus:outline-none focus:ring-0 p-0"
                         />
                         @error('title')
@@ -341,13 +393,21 @@
                     <button
                         type="button"
                         wire:click="save"
-                        class="w-full py-3.5 px-4 rounded-2xl bg-gradient-to-r from-[#5865F2] to-[#4F46E5] hover:from-[#4F46E5] hover:to-[#4338CA] text-white font-bold text-sm tracking-wide flex items-center justify-center gap-2 shadow-xl shadow-[#5865F2]/40 hover:shadow-[#5865F2]/60 active:scale-[0.98] transition-all duration-200 cursor-pointer"
+                        class="w-full py-3.5 px-4 rounded-2xl {{ $mode === 'income' ? 'bg-gradient-to-r from-[#00E676] to-[#00C853] hover:from-[#00C853] hover:to-[#00B048] text-black font-extrabold shadow-xl shadow-[#00E676]/30 hover:shadow-[#00E676]/50' : 'bg-gradient-to-r from-[#5865F2] to-[#4F46E5] hover:from-[#4F46E5] hover:to-[#4338CA] text-white font-bold shadow-xl shadow-[#5865F2]/40 hover:shadow-[#5865F2]/60' }} text-sm tracking-wide flex items-center justify-center gap-2 active:scale-[0.98] transition-all duration-200 cursor-pointer"
                     >
-                        <span>Simpan Transaksi</span>
+                        <span>{{ $mode === 'income' ? '+ Tambah Uang ke Kas Sekarang' : 'Simpan Transaksi' }}</span>
                         <svg class="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke-width="2.5" stroke="currentColor">
                             <path stroke-linecap="round" stroke-linejoin="round" d="M13.5 4.5 21 12m0 0-7.5 7.5M21 12H3" />
                         </svg>
                     </button>
+
+                    <div class="flex items-center justify-center gap-1.5 text-[11px] text-[#9CA3AF]">
+                        <svg class="w-3.5 h-3.5 text-[#00E676]" fill="none" viewBox="0 0 24 24" stroke-width="2.5" stroke="currentColor">
+                            <path stroke-linecap="round" stroke-linejoin="round" d="m4.5 12.75 6 6 9-13.5" />
+                        </svg>
+                        <span>Tersimpan aman di buku kas SIMAU Ledger</span>
+                    </div>
+                </div>
 
                     <div class="flex items-center justify-center gap-1.5 text-[11px] text-[#9CA3AF]">
                         <svg class="w-3.5 h-3.5 text-[#00E676]" fill="none" viewBox="0 0 24 24" stroke-width="2.5" stroke="currentColor">

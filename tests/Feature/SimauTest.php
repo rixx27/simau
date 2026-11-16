@@ -10,6 +10,7 @@ use App\Livewire\Profile\Edit as ProfileEdit;
 use App\Livewire\Transactions\CreateModal;
 use App\Livewire\Trips\Index as TripsIndex;
 use App\Livewire\Trips\Report as TripsReport;
+use App\Livewire\Wallets\DailyLimitModal;
 use App\Livewire\Wallets\Index as WalletsIndex;
 use App\Models\Category;
 use App\Models\Trip;
@@ -102,6 +103,38 @@ class SimauTest extends TestCase
 
         $wallet->refresh();
         $this->assertEquals($initialBalance - $expenseAmount, $wallet->current_balance);
+    }
+
+    public function test_can_create_income_transaction_to_wallet()
+    {
+        $user = User::first();
+        $wallet = Wallet::where('type', 'operational')->first();
+        $category = Category::where('type', 'income')->first();
+
+        $initialBalance = $wallet->current_balance;
+        $incomeAmount = 500000;
+
+        Livewire::actingAs($user)
+            ->test(CreateModal::class)
+            ->call('openModal', 'income')
+            ->set('amount', $incomeAmount)
+            ->set('selectedWalletId', $wallet->id)
+            ->set('selectedCategoryId', $category->id)
+            ->set('title', 'Gaji Bulanan & Bonus')
+            ->set('transactionDate', '2026-11-13T10:00')
+            ->call('save')
+            ->assertDispatched('transaction-saved');
+
+        $this->assertDatabaseHas('transactions', [
+            'title' => 'Gaji Bulanan & Bonus',
+            'amount' => $incomeAmount,
+            'type' => 'income',
+            'wallet_id' => $wallet->id,
+            'trip_id' => null,
+        ]);
+
+        $wallet->refresh();
+        $this->assertEquals($initialBalance + $incomeAmount, $wallet->current_balance);
     }
 
     public function test_can_create_trip_expense_transaction()
@@ -199,6 +232,38 @@ class SimauTest extends TestCase
             'wallet_id' => $goalWallet->id,
             'amount' => $deposit,
         ]);
+    }
+
+    public function test_can_update_daily_spending_limit()
+    {
+        $user = User::first();
+        $opWallet = Wallet::where('user_id', $user->id)->where('type', 'operational')->first();
+
+        Livewire::actingAs($user)
+            ->test(DailyLimitModal::class)
+            ->call('openModal', $opWallet->id)
+            ->set('dailyLimit', 250000)
+            ->call('save')
+            ->assertDispatched('transaction-saved');
+
+        $opWallet->refresh();
+        $this->assertEquals(250000, (int) $opWallet->daily_limit);
+    }
+
+    public function test_can_disable_daily_spending_limit()
+    {
+        $user = User::first();
+        $opWallet = Wallet::where('user_id', $user->id)->where('type', 'operational')->first();
+
+        Livewire::actingAs($user)
+            ->test(DailyLimitModal::class)
+            ->call('openModal', $opWallet->id)
+            ->call('toggleEnabled')
+            ->call('save')
+            ->assertDispatched('transaction-saved');
+
+        $opWallet->refresh();
+        $this->assertNull($opWallet->daily_limit);
     }
 
     public function test_trips_index_page_renders_successfully()
@@ -415,5 +480,20 @@ class SimauTest extends TestCase
         $user->refresh();
         $this->assertEquals('avatars/avatar-4.svg', $user->avatar_path);
         $this->assertStringContainsString('avatars/avatar-4.svg', $user->avatar_url);
+    }
+
+    public function test_analytics_history_week_selection_dispatches_event_and_persists_chart()
+    {
+        $user = User::first();
+
+        Livewire::actingAs($user)
+            ->test(History::class)
+            ->call('selectWeek', 2)
+            ->assertDispatched('week-selected', week: 2)
+            ->assertSee('Min 2')
+            ->assertSee('wire:ignore', false)
+            ->call('selectWeek', 3)
+            ->assertDispatched('week-selected', week: 3)
+            ->assertSee('Min 3');
     }
 }

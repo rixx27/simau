@@ -54,12 +54,18 @@
             <div class="space-y-1">
                 <div class="flex items-center justify-between text-xs text-[#9CA3AF]">
                     <span>Pengeluaran Per Minggu &bull; Rata-rata Rp {{ number_format($weeklyAverage, 0, ',', '.') }}</span>
-                    <span class="inline-flex items-center gap-1 px-2 py-0.5 rounded-full bg-red-500/15 text-red-400 font-semibold text-[11px]">
-                        <svg class="w-3 h-3" fill="none" viewBox="0 0 24 24" stroke-width="2.5" stroke="currentColor">
-                            <path stroke-linecap="round" stroke-linejoin="round" d="M2.25 18 9 11.25l4.306 4.306a11.95 11.95 0 0 1 5.814-5.518l2.74-1.22m0 0-5.94-2.281m5.94 2.28-2.28 5.941" />
-                        </svg>
-                        +8.4%
-                    </span>
+                    @if($totalMonthExpense > 0)
+                        <span class="inline-flex items-center gap-1 px-2 py-0.5 rounded-full bg-red-500/15 text-red-400 font-semibold text-[11px]">
+                            <svg class="w-3 h-3" fill="none" viewBox="0 0 24 24" stroke-width="2.5" stroke="currentColor">
+                                <path stroke-linecap="round" stroke-linejoin="round" d="M2.25 18 9 11.25l4.306 4.306a11.95 11.95 0 0 1 5.814-5.518l2.74-1.22m0 0-5.94-2.281m5.94 2.28-2.28 5.941" />
+                            </svg>
+                            Arus Kas Aktif
+                        </span>
+                    @else
+                        <span class="inline-flex items-center gap-1 px-2 py-0.5 rounded-full bg-[#00E676]/15 text-[#00E676] font-semibold text-[11px]">
+                            Belum Ada Pengeluaran
+                        </span>
+                    @endif
                 </div>
 
                 <div class="flex items-baseline gap-2">
@@ -74,12 +80,29 @@
             <div
                 x-data="{
                     chart: null,
+                    getRadii(w) {
+                        return [
+                            w === 1 ? 8 : 4,
+                            w === 2 ? 8 : 4,
+                            w === 3 ? 8 : 4,
+                            w === 4 ? 8 : 4
+                        ];
+                    },
                     initChart() {
-                        const ctx = this.$refs.canvas.getContext('2d');
+                        const canvas = this.$refs.canvas;
+                        if (!canvas) return;
+
+                        if (this.chart) {
+                            this.chart.destroy();
+                            this.chart = null;
+                        }
+
+                        const ctx = canvas.getContext('2d');
                         const data = @js($chartData);
+                        const initialWeek = @js($selectedWeek);
 
                         // Vertical gradient fill
-                        const gradient = ctx.createLinearGradient(0, 0, 0, 220);
+                        const gradient = ctx.createLinearGradient(0, 0, 0, 180);
                         gradient.addColorStop(0, 'rgba(88, 101, 242, 0.45)');
                         gradient.addColorStop(0.7, 'rgba(88, 101, 242, 0.1)');
                         gradient.addColorStop(1, 'rgba(88, 101, 242, 0.0)');
@@ -99,13 +122,14 @@
                                     pointBackgroundColor: '#5865F2',
                                     pointBorderColor: '#FFFFFF',
                                     pointBorderWidth: 2,
-                                    pointRadius: [4, 4, 6, 4],
+                                    pointRadius: this.getRadii(initialWeek),
                                     pointHoverRadius: 8,
                                 }]
                             },
                             options: {
                                 responsive: true,
                                 maintainAspectRatio: false,
+                                animation: { duration: 300 },
                                 plugins: {
                                     legend: { display: false },
                                     tooltip: {
@@ -133,7 +157,9 @@
                                     },
                                     y: {
                                         display: false,
-                                        grid: { display: false }
+                                        grid: { display: false },
+                                        suggestedMin: 0,
+                                        suggestedMax: 100000
                                     }
                                 }
                             }
@@ -144,6 +170,13 @@
                                 this.chart.data.labels = event.data.labels;
                                 this.chart.data.datasets[0].data = event.data.values;
                                 this.chart.update();
+                            }
+                        });
+
+                        Livewire.on('week-selected', (event) => {
+                            if (this.chart) {
+                                this.chart.data.datasets[0].pointRadius = this.getRadii(event.week);
+                                this.chart.update('none');
                             }
                         });
                     }
@@ -157,22 +190,31 @@
                         <h3 class="text-xs font-bold text-white uppercase tracking-wider">Tren Siklus Mingguan</h3>
                     </div>
                     <span class="text-[10px] font-bold px-2 py-0.5 rounded-full bg-[#262C37] text-[#9CA3AF] uppercase">
-                        Bulan Ini
+                        {{ $period }}
                     </span>
                 </div>
 
-                <!-- Active Week Tooltip Indicator (Min 3 Highlight) -->
+                <!-- Active Week Tooltip Dynamic Indicator -->
                 @php
-                    $min3Value = $chartData['values'][2] ?? 452000;
+                    $activeWeekIndex = ($selectedWeek ? $selectedWeek - 1 : 2);
+                    $activeWeekValue = $chartData['values'][$activeWeekIndex] ?? 0;
+                    $alignClass = match($selectedWeek) {
+                        1 => 'justify-start pl-4 sm:pl-8',
+                        2 => 'justify-start pl-24 sm:pl-32',
+                        3 => 'justify-end pr-24 sm:pr-32',
+                        4 => 'justify-end pr-4 sm:pr-8',
+                        default => 'justify-center',
+                    };
                 @endphp
-                <div class="flex justify-end pr-14 mb-1">
-                    <div class="inline-flex items-center px-3 py-1 rounded-xl bg-white text-[#0D0E12] shadow-xl text-xs font-extrabold font-mono-numbers animate-pulse">
-                        Rp {{ number_format($min3Value, 0, ',', '.') }}
+                <div class="flex {{ $alignClass }} mb-1 transition-all duration-300">
+                    <div class="inline-flex items-center gap-1.5 px-3 py-1 rounded-xl bg-white text-[#0D0E12] shadow-xl text-xs font-extrabold font-mono-numbers">
+                        <span class="text-[10px] text-[#5865F2] font-semibold">{{ $selectedWeek ? 'Min ' . $selectedWeek : 'Total' }}:</span>
+                        <span>Rp {{ number_format($activeWeekValue, 0, ',', '.') }}</span>
                     </div>
                 </div>
 
-                <!-- Chart Canvas Container -->
-                <div class="relative h-44 w-full">
+                <!-- Chart Canvas Container (wire:ignore prevents Livewire morphing from wiping the canvas) -->
+                <div class="relative h-44 w-full" wire:ignore>
                     <canvas x-ref="canvas"></canvas>
                 </div>
 

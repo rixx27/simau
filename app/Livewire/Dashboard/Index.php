@@ -68,21 +68,34 @@ class Index extends Component
         $remainingDaily = max(0, $dailyLimit - $todayExpenses);
         $dailyPercentRemaining = $dailyLimit > 0 ? round(($remainingDaily / $dailyLimit) * 100) : 0;
 
-        // Active Trip
+        // Active Trip or Saving Goal
         $activeTrip = Trip::where('user_id', $userId)
             ->where('status', 'active')
             ->latest()
             ->first();
 
-        // Fallback trip stats if active trip exists
-        $tripName = $activeTrip?->name ?? 'Pundi Liburan';
-        $tripSpent = $activeTrip ? $activeTrip->total_spent : 4200000;
-        $tripBudget = $activeTrip ? (float)$activeTrip->budget : 5000000;
-        $tripPercent = $tripBudget > 0 ? round(($tripSpent / $tripBudget) * 100) : 84;
+        $savingGoal = $wallets->whereIn('type', ['saving', 'trip'])->first();
+
+        if ($activeTrip) {
+            $tripName = $activeTrip->name;
+            $tripSpent = (float) $activeTrip->total_spent;
+            $tripBudget = (float) $activeTrip->budget;
+            $tripPercent = $tripBudget > 0 ? min(100, round(($tripSpent / $tripBudget) * 100)) : 0;
+        } elseif ($savingGoal) {
+            $tripName = $savingGoal->name;
+            $tripSpent = (float) $savingGoal->current_balance;
+            $tripBudget = (float) ($savingGoal->target_amount ?: 5000000);
+            $tripPercent = $tripBudget > 0 ? min(100, round(($tripSpent / $tripBudget) * 100)) : 0;
+        } else {
+            $tripName = 'Target Tabungan';
+            $tripSpent = 0;
+            $tripBudget = 5000000;
+            $tripPercent = 0;
+        }
 
         // Balance Breakdown for Hero Card Sub-badge
         $operationalBalance = (float) $wallets->where('type', 'operational')->sum('current_balance');
-        $tripBalance = (float) $wallets->where('type', 'trip')->sum('current_balance');
+        $tripBalance = (float) $wallets->whereIn('type', ['trip', 'saving'])->sum('current_balance');
         $formattedOpShort = $operationalBalance >= 1000000
             ? 'Rp ' . number_format($operationalBalance / 1000000, 1, ',', '.') . ' Jt'
             : 'Rp ' . number_format($operationalBalance, 0, ',', '.');

@@ -165,8 +165,11 @@
                                         Rencana
                                     </span>
                                 @else
-                                    <span class="inline-flex items-center gap-1 px-2.5 py-1 rounded-full bg-[#374151]/80 backdrop-blur-md border border-gray-600 text-gray-300 text-[10px] font-bold uppercase tracking-wider">
-                                        🏁 Selesai
+                                    <span class="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-full bg-[#374151]/80 backdrop-blur-md border border-gray-600 text-gray-300 text-[10px] font-bold uppercase tracking-wider">
+                                        <svg class="w-3 h-3 text-gray-400" fill="none" viewBox="0 0 24 24" stroke-width="2" stroke="currentColor">
+                                            <path stroke-linecap="round" stroke-linejoin="round" d="m4.5 12.75 6 6 9-13.5" />
+                                        </svg>
+                                        <span>Selesai</span>
                                     </span>
                                 @endif
                             </div>
@@ -253,10 +256,13 @@
                                         type="button"
                                         wire:click="completeTrip({{ $trip->id }})"
                                         wire:confirm="Apakah perjalanan liburan ini sudah selesai? Status akan diubah menjadi Selesai dan laporan pasca-trip siap dievaluasi."
-                                        class="py-2 px-3 rounded-xl bg-amber-500/10 hover:bg-amber-500/20 border border-amber-500/30 text-xs font-medium text-amber-400 transition-all cursor-pointer whitespace-nowrap"
+                                        class="py-2 px-3 rounded-xl bg-amber-500/10 hover:bg-amber-500/20 border border-amber-500/30 text-xs font-medium text-amber-400 transition-all cursor-pointer whitespace-nowrap inline-flex items-center gap-1.5"
                                         title="Selesaikan Perjalanan"
                                     >
-                                         Selesaikan Trip
+                                        <svg class="w-3.5 h-3.5" fill="none" viewBox="0 0 24 24" stroke-width="2" stroke="currentColor">
+                                            <path stroke-linecap="round" stroke-linejoin="round" d="M3 3v1.5M3 21v-6m0 0 2.77-.693a9 9 0 0 1 6.208.682l.108.054a9 9 0 0 0 6.086.71l3.114-.732a48.524 48.524 0 0 1-.005-10.499l-3.11.73a9 9 0 0 1-6.085-.711l-.108-.054a9 9 0 0 0-6.208-.682L3 4.5M3 15V4.5" />
+                                        </svg>
+                                        <span>Selesaikan Trip</span>
                                     </button>
                                 </div>
                             </div>

@@ -119,6 +119,39 @@ class DatabaseSeeder extends Seeder
             'type' => 'expense',
         ]);
 
+        // Income Categories
+        $catGaji = Category::create([
+            'user_id' => null,
+            'name' => 'Gaji & Pendapatan',
+            'icon' => 'wallet',
+            'color' => '#00E676',
+            'type' => 'income',
+        ]);
+
+        $catKiriman = Category::create([
+            'user_id' => null,
+            'name' => 'Uang Saku & Kiriman',
+            'icon' => 'banknotes',
+            'color' => '#10B981',
+            'type' => 'income',
+        ]);
+
+        $catSaldoAwal = Category::create([
+            'user_id' => null,
+            'name' => 'Saldo Awal Kas',
+            'icon' => 'credit-card',
+            'color' => '#5865F2',
+            'type' => 'income',
+        ]);
+
+        $catBonus = Category::create([
+            'user_id' => null,
+            'name' => 'Bonus & Usaha',
+            'icon' => 'gift',
+            'color' => '#F59E0B',
+            'type' => 'income',
+        ]);
+
         // 5. Sample Transactions
         $now = Carbon::parse('2026-11-13 19:42:00');
 
