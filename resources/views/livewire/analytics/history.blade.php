@@ -90,9 +90,12 @@
                             w === 4 ? 8 : 4
                         ];
                     },
-                    initChart() {
+                    async initChart() {
                         const canvas = this.$refs.canvas;
                         if (!canvas) return;
+
+                        const ChartCtor = window.ensureChartJs ? await window.ensureChartJs() : window.Chart;
+                        if (!ChartCtor) return;
 
                         if (this.chart) {
                             this.chart.destroy();
@@ -109,7 +112,7 @@
                         gradient.addColorStop(0.7, 'rgba(88, 101, 242, 0.1)');
                         gradient.addColorStop(1, 'rgba(88, 101, 242, 0.0)');
 
-                        this.chart = new window.Chart(ctx, {
+                        this.chart = new ChartCtor(ctx, {
                             type: 'line',
                             data: {
                                 labels: data.labels,

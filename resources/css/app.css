@@ -1,8 +1,8 @@
-@import url('https://fonts.googleapis.com/css2?family=JetBrains+Mono:wght@400;500;600;700&family=Plus+Jakarta+Sans:wght@300;400;500;600;700;800&display=swap');
-@import 'tailwindcss';
-@import '../../vendor/livewire/flux/dist/flux.css';
+@import 'tailwindcss' source(none);
 
-@source '../views';
+@source '../views/livewire';
+@source '../views/components/layouts/app.blade.php';
+@source '../views/exports';
 @source '../../vendor/laravel/framework/src/Illuminate/Pagination/resources/views/*.blade.php';
 
 @theme {

@@ -6,20 +6,25 @@
     <meta name="csrf-token" content="{{ csrf_token() }}">
 
     <title>{{ $title ?? 'SIMAU - Sistem Manajemen Uangku' }}</title>
+    <meta name="description" content="{{ $description ?? 'SIMAU - Sistem Manajemen Uangku untuk pencatatan kas harian, tabungan impian, dan laporan anggaran perjalanan.' }}">
 
     <!-- Favicon & PWA Manifest -->
     <link rel="icon" type="image/png" href="{{ asset('favicon.png') }}">
     <link rel="apple-touch-icon" href="{{ asset('apple-touch-icon.png') }}">
     <link rel="manifest" href="/manifest.json">
     <meta name="theme-color" content="#0D0E12">
+    <meta name="mobile-web-app-capable" content="yes">
     <meta name="apple-mobile-web-app-capable" content="yes">
     <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
     <meta name="apple-mobile-web-app-title" content="SIMAU">
 
-    <!-- Google Fonts -->
+    <!-- Google Fonts (non-render-blocking) -->
     <link rel="preconnect" href="https://fonts.googleapis.com">
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-    <link href="https://fonts.googleapis.com/css2?family=JetBrains+Mono:wght@400;500;600;700&family=Plus+Jakarta+Sans:wght@300;400;500;600;700;800&display=swap" rel="stylesheet">
+    <link href="https://fonts.googleapis.com/css2?family=JetBrains+Mono:wght@600;700&family=Plus+Jakarta+Sans:wght@400;500;600;700;800&display=swap" rel="stylesheet" media="print" onload="this.media='all'">
+    <noscript>
+        <link href="https://fonts.googleapis.com/css2?family=JetBrains+Mono:wght@600;700&family=Plus+Jakarta+Sans:wght@400;500;600;700;800&display=swap" rel="stylesheet">
+    </noscript>
 
     @vite(['resources/css/app.css', 'resources/js/app.js'])
     @livewireStyles
@@ -34,15 +39,17 @@
                     <img
                         src="{{ asset('images/logo.png') }}"
                         alt="SIMAU Logo"
+                        width="40"
+                        height="40"
                         class="w-10 h-10 rounded-xl object-contain shadow-lg shadow-black/40 group-hover:scale-105 transition-transform"
                     />
                     <span class="absolute -bottom-0.5 -right-0.5 w-3 h-3 bg-[#00E676] border-2 border-[#17181E] rounded-full"></span>
                 </div>
                 <div>
-                    <h1 class="text-base font-bold tracking-tight text-white flex items-center gap-1.5">
+                    <p class="text-base font-bold tracking-tight text-white flex items-center gap-1.5">
                         SIMAU
-                        <span class="text-[10px] uppercase font-semibold tracking-wider px-1.5 py-0.5 rounded bg-[#5865F2]/20 text-[#5865F2] border border-[#5865F2]/30">v1.2</span>
-                    </h1>
+                        <span class="text-[10px] uppercase font-semibold tracking-wider px-1.5 py-0.5 rounded bg-[#5865F2]/20 text-[#818CF8] border border-[#5865F2]/30">v1.2</span>
+                    </p>
                     <p class="text-xs text-[#9CA3AF] font-medium">Sistem Manajemen Uangku</p>
                 </div>
             </a>
@@ -119,10 +126,12 @@
                     <img
                         src="{{ auth()->user()?->avatar_url ?? asset('avatars/avatar-1.svg') }}"
                         alt="Avatar"
+                        width="36"
+                        height="36"
                         class="w-9 h-9 rounded-full object-cover ring-2 ring-[#5865F2]/40"
                     />
                     <div class="flex-1 min-w-0">
-                        <p class="text-xs font-semibold text-white truncate group-hover:text-[#5865F2] transition-colors">
+                        <p class="text-xs font-semibold text-white truncate group-hover:text-[#818CF8] transition-colors">
                             {{ auth()->user()?->name ?? 'Krisna Pradana' }}
                         </p>
                         <p class="text-[11px] text-[#9CA3AF] truncate">
@@ -157,14 +166,16 @@
                             <img
                                 src="{{ asset('images/logo.png') }}"
                                 alt="SIMAU Logo"
+                                width="32"
+                                height="32"
                                 class="w-8 h-8 rounded-xl object-contain shadow-md"
                             />
                             <span class="absolute -bottom-0.5 -right-0.5 w-2.5 h-2.5 bg-[#00E676] border-2 border-[#0D0E12] rounded-full"></span>
                         </div>
                         <div>
-                            <h2 class="text-sm font-bold text-white tracking-tight flex items-center gap-1">
+                            <p class="text-sm font-bold text-white tracking-tight flex items-center gap-1">
                                 SIMAU
-                            </h2>
+                            </p>
                             <p class="text-[10px] text-[#9CA3AF]">Sistem Manajemen Uangku</p>
                         </div>
                     </a>
@@ -193,6 +204,8 @@
                         <img
                             src="{{ auth()->user()?->avatar_url ?? asset('avatars/avatar-1.svg') }}"
                             alt="Avatar"
+                            width="32"
+                            height="32"
                             class="w-8 h-8 rounded-full object-cover ring-1 ring-[#5865F2]/50"
                         />
                     </a>
@@ -239,6 +252,8 @@
                         <img
                             src="{{ auth()->user()?->avatar_url ?? asset('avatars/avatar-1.svg') }}"
                             alt="Avatar"
+                            width="28"
+                            height="28"
                             class="w-7 h-7 rounded-full object-cover ring-1 ring-[#5865F2]/50"
                         />
                         <span class="text-xs font-medium text-white">{{ auth()->user()?->name ?? 'Krisna' }}</span>
@@ -258,7 +273,7 @@
                 <a
                     href="{{ route($item['route']) }}"
                     wire:navigate
-                    class="flex flex-col items-center gap-1 py-1.5 px-2 rounded-2xl transition-all duration-200 {{ $item['active'] ? 'text-[#5865F2] font-semibold scale-105' : 'text-[#9CA3AF] hover:text-white' }}"
+                    class="flex flex-col items-center gap-1 py-1.5 px-2 rounded-2xl transition-all duration-200 {{ $item['active'] ? 'text-[#818CF8] font-semibold scale-105' : 'text-[#9CA3AF] hover:text-white' }}"
                 >
                     <svg class="w-5 h-5" fill="none" viewBox="0 0 24 24" stroke-width="{{ $item['active'] ? '2.3' : '1.8' }}" stroke="currentColor">
                         {!! $item['icon'] !!}
@@ -320,7 +335,7 @@
         </template>
     </div>
 
-    @livewireScripts
+    @livewireScriptConfig
 
     <!-- PWA Service Worker Registration -->
     <script>

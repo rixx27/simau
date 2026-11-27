@@ -1,10 +1,11 @@
 <div>
+    <h1 class="sr-only">Ringkasan Keuangan SIMAU</h1>
     <!-- Desktop Greeting Bar -->
     <div class="hidden md:flex items-center justify-between mb-6">
         <div>
-            <h1 class="text-2xl font-bold tracking-tight text-white flex items-center gap-2">
+            <p class="text-2xl font-bold tracking-tight text-white flex items-center gap-2">
                 Halo, {{ $user?->name ?? 'Krisna' }}!
-            </h1>
+            </p>
             <p class="text-sm text-[#9CA3AF]">
                 Buku catatan pengeluaran harian dan anggaran liburan Anda.
             </p>
@@ -61,6 +62,10 @@
                         <img
                             src="{{ $user?->avatar_url ?? asset('avatars/avatar-1.svg') }}"
                             alt="{{ $user?->name ?? 'User' }}"
+                            width="44"
+                            height="44"
+                            fetchpriority="high"
+                            decoding="async"
                             class="w-11 h-11 rounded-full object-cover ring-2 ring-white/40 shadow-md"
                         />
                         <span class="absolute -bottom-0.5 -right-0.5 w-3 h-3 bg-[#00E676] border-2 border-[#4338CA] rounded-full"></span>
@@ -143,7 +148,7 @@
                                 <path stroke-linecap="round" stroke-linejoin="round" d="M12 4.5v15m7.5-7.5h-15" />
                             </svg>
                         </div>
-                        <span class="text-[11px] font-semibold text-[#00E676]">+ Kas</span>
+                        <span class="text-[11px] font-semibold text-[#A7F3D0]">+ Kas</span>
                     </button>
 
                     <!-- 3. Rencana Trip (Buka Hub Trip) -->
@@ -272,7 +277,7 @@
                         </svg>
                     </div>
                     <div class="min-w-0">
-                        <h4 class="text-xs font-bold text-white group-hover:text-[#818CF8] transition-colors">Keamanan Akun SIMAU</h4>
+                        <h3 class="text-xs font-bold text-white group-hover:text-[#818CF8] transition-colors">Keamanan Akun SIMAU</h3>
                         <p class="text-[11px] text-[#9CA3AF] truncate">{{ $securityLabel }}</p>
                     </div>
                 </div>
@@ -289,7 +294,7 @@
                 <!-- Section Header -->
                 <div class="flex items-center justify-between mb-5">
                     <div class="flex items-center gap-2">
-                        <h3 class="text-base font-bold text-white">Transaksi Terbaru</h3>
+                        <h2 class="text-base font-bold text-white">Transaksi Terbaru</h2>
                         <span class="text-[11px] font-semibold px-2 py-0.5 rounded-full bg-[#262C37] text-[#9CA3AF]">8 Terakhir</span>
                     </div>
 
@@ -345,10 +350,10 @@
 
                                 <div class="min-w-0">
                                     <div class="flex items-center gap-2">
-                                        <h4 class="text-sm font-semibold text-white truncate">{{ $tx->title }}</h4>
+                                        <h3 class="text-sm font-semibold text-white truncate">{{ $tx->title }}</h3>
                                         @if($tx->trip)
-                                            <span class="text-[10px] px-1.5 py-0.5 rounded bg-[#5865F2]/20 text-[#5865F2] border border-[#5865F2]/30 font-semibold truncate inline-flex items-center gap-1">
-                                                <svg class="w-3 h-3 text-[#5865F2]" fill="none" viewBox="0 0 24 24" stroke-width="2" stroke="currentColor">
+                                            <span class="text-[10px] px-1.5 py-0.5 rounded bg-[#5865F2]/20 text-[#818CF8] border border-[#5865F2]/30 font-semibold truncate inline-flex items-center gap-1">
+                                                <svg class="w-3 h-3 text-[#818CF8]" fill="none" viewBox="0 0 24 24" stroke-width="2" stroke="currentColor" aria-hidden="true">
                                                     <path stroke-linecap="round" stroke-linejoin="round" d="M6 12 3.269 3.125A59.769 59.769 0 0 1 21.485 12 59.768 59.768 0 0 1 3.27 20.875L5.999 12Zm0 0h7.5" />
                                                 </svg>
                                                 {{ $tx->trip->destination }}
