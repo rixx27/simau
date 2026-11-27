@@ -1,11 +1,20 @@
 # ==========================================
-# Tahap 1: Node.js untuk Build Aset Frontend
+# Tahap 1: Composer Vendor Dependencies (untuk runtime & Vite CSS/ESM imports)
 # ==========================================
-FROM node:22-alpine AS frontend-builder
+FROM composer:2 AS composer-builder
+WORKDIR /app
+COPY composer.json composer.lock ./
+RUN composer install --no-dev --no-scripts --no-autoloader --prefer-dist --no-interaction --ignore-platform-reqs
+
+# ==========================================
+# Tahap 2: Node.js untuk Build Aset Frontend
+# ==========================================
+FROM node:24-slim AS frontend-builder
 WORKDIR /app
 COPY package*.json ./
-RUN npm ci
+RUN npm ci || npm install --no-audit --no-fund
 COPY . .
+COPY --from=composer-builder /app/vendor ./vendor
 RUN npm run build
 
 # ==========================================
