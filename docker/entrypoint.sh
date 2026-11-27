@@ -34,5 +34,10 @@ php artisan event:cache
 chown -R www-data:www-data /var/www/html/storage /var/www/html/bootstrap/cache
 chmod -R 775 /var/www/html/storage /var/www/html/bootstrap/cache
 
-echo "🌟 SIMAU siap beroperasi!"
+# Sesuaikan port Apache dengan env PORT dari Railway/platform (default 80)
+APP_PORT="${PORT:-80}"
+sed -i "s/^Listen .*/Listen ${APP_PORT}/" /etc/apache2/ports.conf
+sed -i "s/<VirtualHost \*:[0-9]*>/<VirtualHost *:${APP_PORT}>/" /etc/apache2/sites-available/000-default.conf
+
+echo "🌟 SIMAU siap beroperasi di port ${APP_PORT}!"
 exec "$@"
