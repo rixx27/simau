@@ -63,7 +63,7 @@
             @if(($category->transactions_sum_amount ?? 0) > 0)
                 <tr>
                     <td>{{ $no++ }}</td>
-                    <td>{{ $category->name }}</td>
+                    <td>{{ \App\Support\SpreadsheetValue::escape($category->name) }}</td>
                     <td>{{ ucfirst($category->type) }}</td>
                     <td>Rp {{ number_format($category->transactions_sum_amount, 0, ',', '.') }}</td>
                 </tr>
@@ -86,8 +86,8 @@
         </tr>
         @foreach($wallets as $wallet)
             <tr>
-                <td>{{ $wallet->name }}</td>
-                <td>{{ $wallet->account_label ?? '-' }}</td>
+                <td>{{ \App\Support\SpreadsheetValue::escape($wallet->name) }}</td>
+                <td>{{ \App\Support\SpreadsheetValue::escape($wallet->account_label) ?: '-' }}</td>
                 <td>{{ ucfirst($wallet->type) }}</td>
                 <td>Rp {{ number_format($wallet->current_balance, 0, ',', '.') }}</td>
             </tr>

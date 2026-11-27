@@ -2,12 +2,14 @@
 
 namespace App\Livewire\Wallets;
 
+use App\Concerns\ParsesNominal;
 use App\Models\Transaction;
-use App\Models\User;
 use App\Models\Wallet;
 use Carbon\Carbon;
 use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Facades\DB;
+use Illuminate\Validation\Rule;
+use Illuminate\Validation\ValidationException;
 use Livewire\Attributes\Layout;
 use Livewire\Attributes\On;
 use Livewire\Component;
@@ -15,26 +17,28 @@ use Livewire\Component;
 #[Layout('components.layouts.app')]
 class Index extends Component
 {
+    use ParsesNominal;
+
     // Create new wallet / target modal
     public bool $isCreateModalOpen = false;
     public string $name = '';
     public string $accountLabel = '';
     public string $type = 'trip'; // operational, trip, saving
-    public ?int $initialBalance = 0;
-    public ?int $targetAmount = null;
-    public ?int $dailyLimit = null;
+    public $initialBalance = 0;
+    public $targetAmount = null;
+    public $dailyLimit = null;
 
     // Deposit / Tambah Saldo Tabungan modal
     public bool $isDepositModalOpen = false;
     public ?int $depositWalletId = null;
-    public ?int $depositAmount = 100000;
+    public $depositAmount = 100000;
     public string $sourceMode = 'operational'; // 'operational' (sisihkan kas) or 'external' (dana masuk baru)
     public ?int $sourceWalletId = null;
     public string $depositNote = '';
 
     public function mount(): void
     {
-        $user = Auth::user() ?? User::first();
+        $user = Auth::user();
         if ($user) {
             $opWallet = Wallet::where('user_id', $user->id)->where('type', 'operational')->first();
             $this->sourceWalletId = $opWallet?->id;
@@ -62,20 +66,30 @@ class Index extends Component
 
     public function saveWallet(): void
     {
+        if ($this->initialBalance) {
+            $this->initialBalance = $this->parseNominal($this->initialBalance);
+        }
+        if ($this->targetAmount) {
+            $this->targetAmount = $this->parseNominal($this->targetAmount);
+        }
+        if ($this->dailyLimit) {
+            $this->dailyLimit = $this->parseNominal($this->dailyLimit);
+        }
+
         $this->validate([
             'name' => 'required|string|max:100',
             'type' => 'required|in:operational,trip,saving',
-            'initialBalance' => 'nullable|numeric|min:0',
-            'targetAmount' => 'nullable|numeric|min:0',
-            'dailyLimit' => 'nullable|numeric|min:0',
+            'initialBalance' => 'nullable|numeric|min:0|max:1000000000',
+            'targetAmount' => 'nullable|numeric|min:0|max:1000000000',
+            'dailyLimit' => 'nullable|numeric|min:0|max:1000000000',
             'accountLabel' => 'nullable|string|max:50',
         ], [
             'name.required' => 'Nama dompet / target wajib diisi.',
         ]);
 
-        $user = Auth::user() ?? User::first();
+        $user = Auth::user();
         if (!$user) {
-            return;
+            abort(401);
         }
 
         DB::transaction(function () use ($user) {
@@ -113,9 +127,14 @@ class Index extends Component
     #[On('open-deposit-modal')]
     public function openDepositModal(?int $walletId = null): void
     {
-        $user = Auth::user() ?? User::first();
+        $user = Auth::user();
         if (!$user) {
-            return;
+            abort(401);
+        }
+
+        if ($walletId) {
+            $wallet = Wallet::where('user_id', $user->id)->find($walletId);
+            $walletId = $wallet?->id;
         }
 
         if (!$walletId) {
@@ -139,40 +158,63 @@ class Index extends Component
         $this->isDepositModalOpen = false;
     }
 
-    public function addDepositAmount(int $val): void
+    public function addDepositAmount(int|float $val): void
     {
-        $this->depositAmount = ($this->depositAmount ?? 0) + $val;
+        $current = $this->parseNominal($this->depositAmount);
+        $this->depositAmount = $current + $val;
     }
 
     public function saveDeposit(): void
     {
+        $user = Auth::user();
+        if (!$user) {
+            abort(401);
+        }
+
+        $this->depositAmount = $this->parseNominal($this->depositAmount);
+
         $rules = [
-            'depositWalletId' => 'required|exists:wallets,id',
-            'depositAmount' => 'required|numeric|min:5000',
+            'depositWalletId' => [
+                'required',
+                Rule::exists('wallets', 'id')->where('user_id', $user->id),
+            ],
+            'depositAmount' => 'required|numeric|min:1000|max:1000000000',
             'sourceMode' => 'required|in:operational,external',
         ];
 
         if ($this->sourceMode === 'operational') {
-            $rules['sourceWalletId'] = 'required|exists:wallets,id|different:depositWalletId';
+            $rules['sourceWalletId'] = [
+                'required',
+                Rule::exists('wallets', 'id')->where('user_id', $user->id),
+                'different:depositWalletId',
+            ];
         }
 
         $this->validate($rules, [
             'depositWalletId.required' => 'Pilih target tabungan yang ingin disetor.',
-            'depositAmount.min' => 'Nominal tabungan minimal Rp 5.000.',
+            'depositWalletId.exists' => 'Target tabungan yang dipilih tidak valid.',
+            'depositAmount.min' => 'Nominal tabungan minimal Rp 1.000.',
+            'depositAmount.max' => 'Nominal tabungan maksimal Rp 1.000.000.000.',
             'sourceWalletId.required' => 'Pilih rekening kas sumber dana.',
+            'sourceWalletId.exists' => 'Rekening sumber dana tidak valid.',
             'sourceWalletId.different' => 'Sumber dana tidak boleh sama dengan target tabungan.',
         ]);
 
-        $user = Auth::user() ?? User::first();
-        if (!$user) {
-            return;
-        }
-
         DB::transaction(function () use ($user) {
-            $targetWallet = Wallet::lockForUpdate()->findOrFail($this->depositWalletId);
+            $targetWallet = Wallet::where('user_id', $user->id)
+                ->lockForUpdate()
+                ->findOrFail($this->depositWalletId);
 
             if ($this->sourceMode === 'operational') {
-                $sourceWallet = Wallet::lockForUpdate()->findOrFail($this->sourceWalletId);
+                $sourceWallet = Wallet::where('user_id', $user->id)
+                    ->lockForUpdate()
+                    ->findOrFail($this->sourceWalletId);
+
+                if ((float) $sourceWallet->current_balance < (float) $this->depositAmount) {
+                    throw ValidationException::withMessages([
+                        'depositAmount' => 'Saldo rekening sumber tidak mencukupi (tersedia: ' . $sourceWallet->formatted_balance . ').',
+                    ]);
+                }
 
                 // Transfer allocation
                 $sourceWallet->decrement('current_balance', $this->depositAmount);
@@ -213,7 +255,7 @@ class Index extends Component
 
     public function render()
     {
-        $user = Auth::user() ?? User::first();
+        $user = Auth::user();
         $userId = $user?->id;
 
         $wallets = Wallet::withCount(['transactions', 'incomingTransfers'])

@@ -2,24 +2,29 @@
 
 namespace App\Livewire\Transactions;
 
+use App\Concerns\ParsesNominal;
 use App\Models\Category;
 use App\Models\Transaction;
 use App\Models\Trip;
-use App\Models\User;
 use App\Models\Wallet;
 use Carbon\Carbon;
+use Illuminate\Contracts\View\View;
 use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Facades\DB;
+use Illuminate\Validation\Rule;
+use Illuminate\Validation\ValidationException;
 use Livewire\Attributes\On;
 use Livewire\Component;
 
 class CreateModal extends Component
 {
+    use ParsesNominal;
+
     public bool $isOpen = false;
 
     // Form fields
     public string $mode = 'daily'; // 'daily' (Pengeluaran Harian) or 'trip' (Pengeluaran Trip)
-    public ?int $amount = 45000;
+    public mixed $amount = 45000;
     public ?int $selectedCategoryId = null;
     public ?int $selectedWalletId = null;
     public ?int $selectedTripId = null;
@@ -44,7 +49,7 @@ class CreateModal extends Component
 
     protected function loadDefaults(): void
     {
-        $user = Auth::user() ?? User::first();
+        $user = Auth::user();
         if (!$user) {
             return;
         }
@@ -70,8 +75,12 @@ class CreateModal extends Component
 
         // Set default category
         if (!$this->selectedCategoryId) {
-            $grabCategory = Category::where('name', 'GrabCar')->first()
-                ?? Category::first();
+            $grabCategory = Category::where(function ($query) use ($user) {
+                $query->whereNull('user_id')->orWhere('user_id', $user->id);
+            })->where('name', 'GrabCar')->first()
+                ?? Category::where(function ($query) use ($user) {
+                    $query->whereNull('user_id')->orWhere('user_id', $user->id);
+                })->first();
             $this->selectedCategoryId = $grabCategory?->id;
         }
     }
@@ -125,9 +134,10 @@ class CreateModal extends Component
         }
     }
 
-    public function addAmount(int $value): void
+    public function addAmount(int|float $value): void
     {
-        $this->amount = ($this->amount ?? 0) + $value;
+        $current = $this->parseNominal($this->amount);
+        $this->amount = $current + $value;
     }
 
     public function selectCategory(int $id): void
@@ -142,19 +152,22 @@ class CreateModal extends Component
 
     public function saveNewCategory(): void
     {
+        $user = Auth::user();
+        if (!$user) {
+            abort(401);
+        }
+
         $this->validate([
             'newCategoryName' => 'required|string|max:50',
-            'newCategoryColor' => 'required|string|max:20',
+            'newCategoryColor' => ['required', 'string', 'regex:/^#[0-9A-Fa-f]{6}$/'],
         ]);
 
-        $user = Auth::user() ?? User::first();
-
         $category = Category::create([
-            'user_id' => $user?->id,
+            'user_id' => $user->id,
             'name' => trim($this->newCategoryName),
             'icon' => $this->newCategoryIcon ?: 'tag',
             'color' => $this->newCategoryColor ?: '#5865F2',
-            'type' => 'expense',
+            'type' => $this->mode === 'income' ? 'income' : 'expense',
         ]);
 
         $this->selectedCategoryId = $category->id;
@@ -164,40 +177,68 @@ class CreateModal extends Component
 
     public function save(): void
     {
-        $user = Auth::user() ?? User::first();
+        $this->amount = $this->parseNominal($this->amount);
+
+        $user = Auth::user();
         if (!$user) {
-            return;
+            abort(401);
         }
 
         $rules = [
-            'amount' => 'required|numeric|min:1000',
-            'selectedWalletId' => 'required|exists:wallets,id',
-            'selectedCategoryId' => 'required|exists:categories,id',
+            'amount' => 'required|numeric|min:1000|max:1000000000',
+            'selectedWalletId' => [
+                'required',
+                Rule::exists('wallets', 'id')->where('user_id', $user->id),
+            ],
+            'selectedCategoryId' => [
+                'required',
+                Rule::exists('categories', 'id')->where(function ($query) use ($user) {
+                    $query->whereNull('user_id')->orWhere('user_id', $user->id);
+                }),
+            ],
             'title' => 'required|string|max:150',
-            'transactionDate' => 'required',
+            'transactionDate' => 'required|date',
         ];
 
         if ($this->mode === 'trip') {
-            $rules['selectedTripId'] = 'required|exists:trips,id';
+            $rules['selectedTripId'] = [
+                'required',
+                Rule::exists('trips', 'id')->where('user_id', $user->id),
+            ];
         }
 
         $this->validate($rules, [
             'selectedCategoryId.required' => 'Pilih salah satu kategori transaksi.',
+            'selectedCategoryId.exists' => 'Kategori yang dipilih tidak valid.',
+            'selectedWalletId.exists' => 'Dompet yang dipilih tidak valid.',
             'selectedTripId.required' => 'Pilih trip tujuan pencatatan ini.',
+            'selectedTripId.exists' => 'Trip yang dipilih tidak valid.',
             'amount.min' => 'Nominal minimal Rp 1.000.',
+            'amount.max' => 'Nominal maksimal Rp 1.000.000.000.',
         ]);
 
         $isIncome = $this->mode === 'income';
 
         DB::transaction(function () use ($user, $isIncome) {
-            $wallet = Wallet::lockForUpdate()->findOrFail($this->selectedWalletId);
-            $category = Category::find($this->selectedCategoryId);
+            $wallet = Wallet::where('user_id', $user->id)
+                ->lockForUpdate()
+                ->findOrFail($this->selectedWalletId);
+
+            if (!$isIncome && (float) $wallet->current_balance < (float) $this->amount) {
+                throw ValidationException::withMessages([
+                    'amount' => 'Saldo dompet tidak mencukupi (tersedia: ' . $wallet->formatted_balance . ').',
+                ]);
+            }
+
+            $category = Category::where(function ($query) use ($user) {
+                $query->whereNull('user_id')->orWhere('user_id', $user->id);
+            })->findOrFail($this->selectedCategoryId);
 
             Transaction::create([
                 'user_id' => $user->id,
                 'wallet_id' => $wallet->id,
                 'trip_id' => $this->mode === 'trip' ? $this->selectedTripId : null,
-                'category_id' => $category?->id,
+                'category_id' => $category->id,
                 'type' => $isIncome ? 'income' : 'expense',
                 'amount' => $this->amount,
                 'title' => $this->title,
@@ -219,9 +260,9 @@ class CreateModal extends Component
         $this->closeModal();
     }
 
-    public function render()
+    public function render(): View
     {
-        $user = Auth::user() ?? User::first();
+        $user = Auth::user();
         $userId = $user?->id;
 
         $isIncome = $this->mode === 'income';

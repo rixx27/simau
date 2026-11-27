@@ -3,8 +3,8 @@
 namespace App\Livewire\Trips;
 
 use App\Models\Trip;
-use App\Models\User;
 use Carbon\Carbon;
+use Illuminate\Contracts\View\View;
 use Illuminate\Support\Facades\Auth;
 use Livewire\Attributes\Layout;
 use Livewire\Attributes\On;
@@ -71,9 +71,9 @@ class Index extends Component
             'budget.min' => 'Plafon anggaran minimal Rp 10.000.',
         ]);
 
-        $user = Auth::user() ?? User::first();
+        $user = Auth::user();
         if (!$user) {
-            return;
+            abort(401);
         }
 
         $user->trips()->create([
@@ -94,8 +94,11 @@ class Index extends Component
 
     public function completeTrip(int $tripId): void
     {
-        $user = Auth::user() ?? User::first();
-        $trip = Trip::where('user_id', $user?->id)->findOrFail($tripId);
+        $user = Auth::user();
+        if (!$user) {
+            abort(401);
+        }
+        $trip = Trip::where('user_id', $user->id)->findOrFail($tripId);
         
         $trip->update(['status' => 'completed']);
         $this->dispatch('transaction-saved');
@@ -104,17 +107,20 @@ class Index extends Component
 
     public function activateTrip(int $tripId): void
     {
-        $user = Auth::user() ?? User::first();
-        $trip = Trip::where('user_id', $user?->id)->findOrFail($tripId);
+        $user = Auth::user();
+        if (!$user) {
+            abort(401);
+        }
+        $trip = Trip::where('user_id', $user->id)->findOrFail($tripId);
         
         $trip->update(['status' => 'active']);
         $this->dispatch('transaction-saved');
         $this->dispatch('notify', message: 'Trip "' . $trip->name . '" kini aktif! Pengeluaran liburan siap dicatat.');
     }
 
-    public function render()
+    public function render(): View
     {
-        $user = Auth::user() ?? User::first();
+        $user = Auth::user();
         $userId = $user?->id;
 
         $tripsQuery = Trip::with(['transactions.category'])

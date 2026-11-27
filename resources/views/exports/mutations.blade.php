@@ -42,14 +42,14 @@
                     @endif
                 </td>
                 <td>
-                    {{ $trx->wallet->name ?? '-' }}
+                    {{ \App\Support\SpreadsheetValue::escape($trx->wallet->name ?? null) ?: '-' }}
                     @if($trx->destinationWallet)
-                        -&gt; {{ $trx->destinationWallet->name }}
+                        -&gt; {{ \App\Support\SpreadsheetValue::escape($trx->destinationWallet->name) }}
                     @endif
                 </td>
-                <td>{{ $trx->category->name ?? ($trx->type === 'transfer' ? 'Nabung Trip' : '-') }}</td>
-                <td style="font-weight: 500;">{{ $trx->title }}</td>
-                <td>{{ $trx->note ?? '-' }}</td>
+                <td>{{ \App\Support\SpreadsheetValue::escape($trx->category->name ?? null) ?: ($trx->type === 'transfer' ? 'Nabung Trip' : '-') }}</td>
+                <td style="font-weight: 500;">{{ \App\Support\SpreadsheetValue::escape($trx->title) }}</td>
+                <td>{{ \App\Support\SpreadsheetValue::escape($trx->note) ?: '-' }}</td>
                 <td style="text-align: right; font-weight: bold; color: {{ $trx->type === 'expense' ? '#DC2626' : '#16A34A' }};">
                     {{ $trx->type === 'expense' ? '-Rp ' : '+Rp ' }}{{ number_format($trx->amount, 0, ',', '.') }}
                 </td>

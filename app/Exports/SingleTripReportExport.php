@@ -24,6 +24,7 @@ class SingleTripReportExport implements Export, FromView, WithTitle, ShouldAutoS
     public function view(): View
     {
         $transactions = $this->trip->transactions()
+            ->where('type', 'expense')
             ->with(['category', 'wallet'])
             ->orderBy('transaction_date', 'asc')
             ->get();

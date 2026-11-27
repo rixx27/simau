@@ -4,8 +4,8 @@ namespace App\Livewire\Analytics;
 
 use App\Models\Category;
 use App\Models\Transaction;
-use App\Models\User;
 use Carbon\Carbon;
+use Illuminate\Contracts\View\View;
 use Illuminate\Support\Facades\Auth;
 use Livewire\Attributes\Layout;
 use Livewire\Attributes\On;
@@ -14,17 +14,54 @@ use Livewire\Component;
 #[Layout('components.layouts.app')]
 class History extends Component
 {
-    public string $period = 'November'; // 'Minggu Ini', 'Oktober', 'November', 'Desember'
-    public ?int $selectedWeek = 3; // 1, 2, 3, 4 (null for all)
+    public string $period = '';
+    public ?int $selectedWeek = 3; // 1, 2, 3, 4 (null for all / this_week)
+
+    public function mount(): void
+    {
+        $now = Carbon::now();
+        $this->period = $now->format('Y-m');
+        $this->selectedWeek = min(4, (int) ceil($now->day / 7));
+    }
+
+    /**
+     * @return array<string, string>
+     */
+    public function getPeriodOptions(): array
+    {
+        $now = Carbon::now()->startOfMonth();
+
+        return [
+            'this_week' => 'Minggu Ini',
+            $now->copy()->subMonths(2)->format('Y-m') => $now->copy()->subMonths(2)->translatedFormat('F Y'),
+            $now->copy()->subMonth()->format('Y-m') => $now->copy()->subMonth()->translatedFormat('F Y'),
+            $now->format('Y-m') => $now->translatedFormat('F Y'),
+        ];
+    }
 
     public function selectPeriod(string $period): void
     {
+        if (!array_key_exists($period, $this->getPeriodOptions())) {
+            return;
+        }
+
         $this->period = $period;
+        if ($period === 'this_week') {
+            $this->selectedWeek = null;
+        } elseif ($this->selectedWeek === null) {
+            $this->selectedWeek = 1;
+        }
+
         $this->dispatchChartUpdate();
+        $this->dispatch('week-selected', week: $this->selectedWeek);
     }
 
     public function selectWeek(?int $week): void
     {
+        if ($this->period === 'this_week') {
+            return;
+        }
+
         $this->selectedWeek = $this->selectedWeek === $week ? null : $week;
         $this->dispatch('week-selected', week: $this->selectedWeek);
     }
@@ -41,28 +78,52 @@ class History extends Component
         $this->dispatch('chart-data-updated', data: $chartData);
     }
 
-    protected function getMonthNumber(): int
+    /**
+     * @return array{0: Carbon, 1: Carbon}
+     */
+    protected function getPeriodDateRange(): array
     {
-        return match ($this->period) {
-            'Oktober' => 10,
-            'November' => 11,
-            'Desember' => 12,
-            default => 11,
-        };
+        if ($this->period === 'this_week') {
+            $now = Carbon::now();
+            return [$now->copy()->startOfWeek(), $now->copy()->endOfWeek()];
+        }
+
+        $monthDate = preg_match('/^\d{4}-\d{2}$/', $this->period)
+            ? Carbon::createFromFormat('Y-m', $this->period)->startOfMonth()
+            : Carbon::now()->startOfMonth();
+
+        return [$monthDate->copy()->startOfMonth(), $monthDate->copy()->endOfMonth()];
     }
 
+    /**
+     * @return array{labels: list<string>, values: list<float>}
+     */
     public function getChartData(): array
     {
-        $user = Auth::user() ?? User::first();
+        $user = Auth::user();
         $userId = $user?->id;
-        $month = $this->getMonthNumber();
-        $year = 2026;
+        [$startDate, $endDate] = $this->getPeriodDateRange();
 
-        // Calculate 4 weekly buckets:
-        // Min 1: Days 1 - 7
-        // Min 2: Days 8 - 14
-        // Min 3: Days 15 - 21
-        // Min 4: Days 22 - end of month
+        if ($this->period === 'this_week') {
+            $labels = ['Sen', 'Sel', 'Rab', 'Kam', 'Jum', 'Sab', 'Min'];
+            $values = [];
+            for ($i = 0; $i < 7; $i++) {
+                $day = $startDate->copy()->addDays($i)->toDateString();
+                $values[] = (float) Transaction::where('user_id', $userId)
+                    ->where('type', 'expense')
+                    ->whereDate('transaction_date', $day)
+                    ->sum('amount');
+            }
+
+            return [
+                'labels' => $labels,
+                'values' => $values,
+            ];
+        }
+
+        $year = $startDate->year;
+        $month = $startDate->month;
+
         $min1 = Transaction::where('user_id', $userId)
             ->where('type', 'expense')
             ->whereYear('transaction_date', $year)
@@ -96,45 +157,46 @@ class History extends Component
 
         return [
             'labels' => ['Min 1', 'Min 2', 'Min 3', 'Min 4'],
-            'values' => [(float)$min1, (float)$min2, (float)$min3, (float)$min4],
+            'values' => [(float) $min1, (float) $min2, (float) $min3, (float) $min4],
         ];
     }
 
-    public function render()
+    public function render(): View
     {
-        $user = Auth::user() ?? User::first();
+        $user = Auth::user();
         $userId = $user?->id;
-        $month = $this->getMonthNumber();
-        $year = 2026;
+        [$startDate, $endDate] = $this->getPeriodDateRange();
+        $periodOptions = $this->getPeriodOptions();
+        $periodLabel = $periodOptions[$this->period] ?? $startDate->translatedFormat('F Y');
 
         // Base Query
         $baseExpenseQuery = Transaction::where('user_id', $userId)
             ->where('type', 'expense')
-            ->whereYear('transaction_date', $year)
-            ->whereMonth('transaction_date', $month);
+            ->whereBetween('transaction_date', [$startDate, $endDate]);
 
         $totalMonthExpense = (clone $baseExpenseQuery)->sum('amount');
-        $weeklyAverage = $totalMonthExpense > 0 ? round($totalMonthExpense / 4) : 0;
+        $divisor = $this->period === 'this_week' ? 7 : 4;
+        $weeklyAverage = $totalMonthExpense > 0 ? round($totalMonthExpense / $divisor) : 0;
 
         // Categories with total for this period
-        $categories = Category::withSum(['transactions' => function ($q) use ($userId, $year, $month) {
+        $categories = Category::where(function ($q) use ($userId) {
+            $q->whereNull('user_id')->orWhere('user_id', $userId);
+        })->withSum(['transactions' => function ($q) use ($userId, $startDate, $endDate) {
             $q->where('user_id', $userId)
                 ->where('type', 'expense')
-                ->whereYear('transaction_date', $year)
-                ->whereMonth('transaction_date', $month);
+                ->whereBetween('transaction_date', [$startDate, $endDate]);
         }], 'amount')
-        ->orderByDesc('transactions_sum_amount')
-        ->get();
+            ->orderByDesc('transactions_sum_amount')
+            ->get();
 
         // Recent activity matching period and optional week
         $activityQuery = Transaction::with(['category', 'wallet'])
             ->where('user_id', $userId)
-            ->whereYear('transaction_date', $year)
-            ->whereMonth('transaction_date', $month);
+            ->whereBetween('transaction_date', [$startDate, $endDate]);
 
-        if ($this->selectedWeek) {
+        if ($this->period !== 'this_week' && $this->selectedWeek) {
             $startDay = ($this->selectedWeek - 1) * 7 + 1;
-            $endDay = $this->selectedWeek === 4 ? 31 : $this->selectedWeek * 7;
+            $endDay = $this->selectedWeek === 4 ? $endDate->day : $this->selectedWeek * 7;
             $activityQuery->whereDay('transaction_date', '>=', $startDay)
                 ->whereDay('transaction_date', '<=', $endDay);
         }
@@ -144,6 +206,8 @@ class History extends Component
         $chartData = $this->getChartData();
 
         return view('livewire.analytics.history', [
+            'periodOptions' => $periodOptions,
+            'periodLabel' => $periodLabel,
             'totalMonthExpense' => $totalMonthExpense,
             'weeklyAverage' => $weeklyAverage,
             'categories' => $categories,

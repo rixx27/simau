@@ -30,16 +30,13 @@
 
     <!-- Period Filter Pills -->
     <div class="flex items-center gap-2 overflow-x-auto pb-2 mb-6 scrollbar-none">
-        @php
-            $periods = ['Minggu Ini', 'Oktober', 'November', 'Desember'];
-        @endphp
-        @foreach($periods as $p)
+        @foreach($periodOptions as $pKey => $pLabel)
             <button
                 type="button"
-                wire:click="selectPeriod('{{ $p }}')"
-                class="px-4 py-2 rounded-full text-xs font-semibold whitespace-nowrap transition-all duration-200 cursor-pointer {{ $period === $p ? 'bg-white text-[#0D0E12] shadow-lg shadow-white/20' : 'bg-[#17181E] text-[#9CA3AF] border border-[#262C37] hover:text-white hover:border-[#5865F2]' }}"
+                wire:click="selectPeriod('{{ $pKey }}')"
+                class="px-4 py-2 rounded-full text-xs font-semibold whitespace-nowrap transition-all duration-200 cursor-pointer {{ $period === $pKey ? 'bg-white text-[#0D0E12] shadow-lg shadow-white/20' : 'bg-[#17181E] text-[#9CA3AF] border border-[#262C37] hover:text-white hover:border-[#5865F2]' }}"
             >
-                {{ $p }}
+                {{ $pLabel }}
             </button>
         @endforeach
     </div>
@@ -53,7 +50,9 @@
             <!-- Spending Summary Metric -->
             <div class="space-y-1">
                 <div class="flex items-center justify-between text-xs text-[#9CA3AF]">
-                    <span>Pengeluaran Per Minggu &bull; Rata-rata Rp {{ number_format($weeklyAverage, 0, ',', '.') }}</span>
+                    <span>
+                        {{ $period === 'this_week' ? 'Pengeluaran Harian' : 'Pengeluaran Per Minggu' }} &bull; Rata-rata Rp {{ number_format($weeklyAverage, 0, ',', '.') }}
+                    </span>
                     @if($totalMonthExpense > 0)
                         <span class="inline-flex items-center gap-1 px-2 py-0.5 rounded-full bg-red-500/15 text-red-400 font-semibold text-[11px]">
                             <svg class="w-3 h-3" fill="none" viewBox="0 0 24 24" stroke-width="2.5" stroke="currentColor">
@@ -72,7 +71,7 @@
                     <h2 class="text-3xl sm:text-4xl font-extrabold text-white font-mono-numbers">
                         Rp {{ number_format($totalMonthExpense, 0, ',', '.') }}
                     </h2>
-                    <span class="text-xs text-[#9CA3AF] font-medium">Total {{ substr($period, 0, 3) }}</span>
+                    <span class="text-xs text-[#9CA3AF] font-medium">Total {{ $periodLabel }}</span>
                 </div>
             </div>
 
@@ -190,28 +189,30 @@
                         <h3 class="text-xs font-bold text-white uppercase tracking-wider">Tren Siklus Mingguan</h3>
                     </div>
                     <span class="text-[10px] font-bold px-2 py-0.5 rounded-full bg-[#262C37] text-[#9CA3AF] uppercase">
-                        {{ $period }}
+                        {{ $periodLabel }}
                     </span>
                 </div>
 
                 <!-- Active Week Tooltip Dynamic Indicator -->
-                @php
-                    $activeWeekIndex = ($selectedWeek ? $selectedWeek - 1 : 2);
-                    $activeWeekValue = $chartData['values'][$activeWeekIndex] ?? 0;
-                    $alignClass = match($selectedWeek) {
-                        1 => 'justify-start pl-4 sm:pl-8',
-                        2 => 'justify-start pl-24 sm:pl-32',
-                        3 => 'justify-end pr-24 sm:pr-32',
-                        4 => 'justify-end pr-4 sm:pr-8',
-                        default => 'justify-center',
-                    };
-                @endphp
-                <div class="flex {{ $alignClass }} mb-1 transition-all duration-300">
-                    <div class="inline-flex items-center gap-1.5 px-3 py-1 rounded-xl bg-white text-[#0D0E12] shadow-xl text-xs font-extrabold font-mono-numbers">
-                        <span class="text-[10px] text-[#5865F2] font-semibold">{{ $selectedWeek ? 'Min ' . $selectedWeek : 'Total' }}:</span>
-                        <span>Rp {{ number_format($activeWeekValue, 0, ',', '.') }}</span>
+                @if($period !== 'this_week')
+                    @php
+                        $activeWeekIndex = ($selectedWeek ? $selectedWeek - 1 : 2);
+                        $activeWeekValue = $chartData['values'][$activeWeekIndex] ?? 0;
+                        $alignClass = match($selectedWeek) {
+                            1 => 'justify-start pl-4 sm:pl-8',
+                            2 => 'justify-start pl-24 sm:pl-32',
+                            3 => 'justify-end pr-24 sm:pr-32',
+                            4 => 'justify-end pr-4 sm:pr-8',
+                            default => 'justify-center',
+                        };
+                    @endphp
+                    <div class="flex {{ $alignClass }} mb-1 transition-all duration-300">
+                        <div class="inline-flex items-center gap-1.5 px-3 py-1 rounded-xl bg-white text-[#0D0E12] shadow-xl text-xs font-extrabold font-mono-numbers">
+                            <span class="text-[10px] text-[#5865F2] font-semibold">{{ $selectedWeek ? 'Min ' . $selectedWeek : 'Total' }}:</span>
+                            <span>Rp {{ number_format($activeWeekValue, 0, ',', '.') }}</span>
+                        </div>
                     </div>
-                </div>
+                @endif
 
                 <!-- Chart Canvas Container (wire:ignore prevents Livewire morphing from wiping the canvas) -->
                 <div class="relative h-44 w-full" wire:ignore>
@@ -219,21 +220,23 @@
                 </div>
 
                 <!-- Interactive Week Selectors -->
-                <div class="flex items-center justify-around pt-3 border-t border-[#262C37]/60 mt-2">
-                    @foreach(['Min 1', 'Min 2', 'Min 3', 'Min 4'] as $index => $wLabel)
-                        @php
-                            $wNum = $index + 1;
-                            $isActive = $selectedWeek === $wNum;
-                        @endphp
-                        <button
-                            type="button"
-                            wire:click="selectWeek({{ $wNum }})"
-                            class="px-3 py-1 rounded-lg text-xs font-semibold transition-all duration-150 cursor-pointer {{ $isActive ? 'bg-[#5865F2] text-white shadow-md' : 'text-[#9CA3AF] hover:text-white' }}"
-                        >
-                            {{ $wLabel }}
-                        </button>
-                    @endforeach
-                </div>
+                @if($period !== 'this_week')
+                    <div class="flex items-center justify-around pt-3 border-t border-[#262C37]/60 mt-2">
+                        @foreach(['Min 1', 'Min 2', 'Min 3', 'Min 4'] as $index => $wLabel)
+                            @php
+                                $wNum = $index + 1;
+                                $isActive = $selectedWeek === $wNum;
+                            @endphp
+                            <button
+                                type="button"
+                                wire:click="selectWeek({{ $wNum }})"
+                                class="px-3 py-1 rounded-lg text-xs font-semibold transition-all duration-150 cursor-pointer {{ $isActive ? 'bg-[#5865F2] text-white shadow-md' : 'text-[#9CA3AF] hover:text-white' }}"
+                            >
+                                {{ $wLabel }}
+                            </button>
+                        @endforeach
+                    </div>
+                @endif
             </div>
 
             <!-- KATEGORI PENGELUARAN HORIZONTAL CARDS -->
@@ -297,10 +300,12 @@
                 <div class="flex items-center justify-between mb-4">
                     <h3 class="text-base font-bold text-white">Aktivitas Terkini</h3>
                     <span class="text-xs font-semibold px-2.5 py-1 rounded-full bg-[#262C37] text-[#9CA3AF]">
-                        @if($selectedWeek)
-                            Min {{ $selectedWeek }} ({{ ($selectedWeek - 1) * 7 + 1 }} - {{ $selectedWeek === 4 ? 'Akhir' : $selectedWeek * 7 }} {{ substr($period, 0, 3) }})
+                        @if($period === 'this_week')
+                            Minggu Ini
+                        @elseif($selectedWeek)
+                            Min {{ $selectedWeek }} ({{ ($selectedWeek - 1) * 7 + 1 }} - {{ $selectedWeek === 4 ? 'Akhir' : $selectedWeek * 7 }} {{ $periodLabel }})
                         @else
-                            Semua Minggu {{ $period }}
+                            Semua Minggu {{ $periodLabel }}
                         @endif
                     </span>
                 </div>

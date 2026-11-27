@@ -52,7 +52,7 @@
                 <button
                     type="button"
                     x-data
-                    @click="$dispatch('open-transaction-modal', { mode: 'expense' })"
+                    @click="$dispatch('open-transaction-modal', { mode: 'daily' })"
                     class="w-full flex items-center justify-center gap-2 py-3 px-4 rounded-xl bg-gradient-to-r from-[#5865F2] to-[#4F46E5] hover:from-[#4F46E5] hover:to-[#4338CA] text-white font-semibold text-sm transition-all duration-200 shadow-lg shadow-[#5865F2]/30 hover:shadow-[#5865F2]/50 active:scale-[0.98] cursor-pointer"
                 >
                     <svg class="w-5 h-5" fill="none" viewBox="0 0 24 24" stroke-width="2.5" stroke="currentColor">
@@ -261,6 +261,44 @@
 
     <!-- GLOBAL DAILY LIMIT MODAL -->
     <livewire:wallets.daily-limit-modal />
+
+    <!-- GLOBAL TOAST NOTIFICATION -->
+    <div
+        x-data="{
+            toasts: [],
+            add(message, type = 'success') {
+                if (!message) return;
+                const id = Date.now() + Math.random();
+                this.toasts.push({ id, message, type });
+                setTimeout(() => {
+                    this.toasts = this.toasts.filter(t => t.id !== id);
+                }, 4000);
+            }
+        }"
+        @notify.window="add($event.detail.message ?? $event.detail[0]?.message ?? '', $event.detail.type ?? 'success')"
+        aria-live="polite"
+        class="fixed bottom-24 md:bottom-6 right-4 z-50 flex flex-col gap-2 max-w-sm w-full pointer-events-none"
+    >
+        <template x-for="toast in toasts" :key="toast.id">
+            <div
+                x-transition
+                class="pointer-events-auto flex items-center justify-between gap-3 px-4 py-3 rounded-2xl bg-[#17181E] border border-[#00E676]/40 text-white shadow-2xl shadow-black/60 text-xs font-semibold"
+            >
+                <div class="flex items-center gap-2.5 min-w-0">
+                    <span class="w-2.5 h-2.5 rounded-full bg-[#00E676] flex-shrink-0"></span>
+                    <span x-text="toast.message" class="truncate"></span>
+                </div>
+                <button
+                    type="button"
+                    @click="toasts = toasts.filter(t => t.id !== toast.id)"
+                    aria-label="Tutup notifikasi"
+                    class="text-[#9CA3AF] hover:text-white cursor-pointer px-1"
+                >
+                    &times;
+                </button>
+            </div>
+        </template>
+    </div>
 
     @livewireScripts
 

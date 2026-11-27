@@ -14,7 +14,7 @@
             </tr>
             <tr>
                 <th colspan="6" style="text-align: center; color: #555555; height: 20px;">
-                    Perjalanan: {{ $trip->name }} &bull; Destinasi: {{ $trip->destination }} &bull; Periode: {{ $trip->formatted_date_range }} ({{ $trip->days_duration }} Hari)
+                    Perjalanan: {{ \App\Support\SpreadsheetValue::escape($trip->name) }} &bull; Destinasi: {{ \App\Support\SpreadsheetValue::escape($trip->destination) }} &bull; Periode: {{ $trip->formatted_date_range }} ({{ $trip->days_duration }} Hari)
                 </th>
             </tr>
             <tr><th colspan="6"></th></tr>
@@ -60,7 +60,7 @@
             </tr>
             @foreach($categoryBreakdown as $cat)
                 <tr>
-                    <td colspan="3">{{ $cat['name'] }}</td>
+                    <td colspan="3">{{ \App\Support\SpreadsheetValue::escape($cat['name']) }}</td>
                     <td style="text-align: center;">{{ $cat['count'] }}</td>
                     <td colspan="2" style="text-align: right;">Rp {{ number_format($cat['total'], 0, ',', '.') }}</td>
                 </tr>
@@ -84,9 +84,9 @@
                 <tr>
                     <td style="text-align: center;">{{ $index + 1 }}</td>
                     <td>{{ $tx->transaction_date ? $tx->transaction_date->format('d/m/Y H:i') : '-' }}</td>
-                    <td>{{ $tx->category ? $tx->category->name : 'Lainnya' }}</td>
-                    <td>{{ $tx->title }}</td>
-                    <td>{{ $tx->note ?? '-' }}</td>
+                    <td>{{ \App\Support\SpreadsheetValue::escape($tx->category ? $tx->category->name : null) ?: 'Lainnya' }}</td>
+                    <td>{{ \App\Support\SpreadsheetValue::escape($tx->title) }}</td>
+                    <td>{{ \App\Support\SpreadsheetValue::escape($tx->note) ?: '-' }}</td>
                     <td style="text-align: right;">Rp {{ number_format($tx->amount, 0, ',', '.') }}</td>
                 </tr>
             @empty

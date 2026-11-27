@@ -3,13 +3,15 @@
 namespace App\Livewire\Trips;
 
 use App\Exports\SingleTripReportExport;
+use App\Models\Transaction;
 use App\Models\Trip;
-use App\Models\User;
 use Carbon\Carbon;
+use Illuminate\Contracts\View\View;
 use Illuminate\Support\Facades\Auth;
 use Livewire\Attributes\Layout;
 use Livewire\Component;
 use Maatwebsite\Excel\Facades\Excel;
+use Symfony\Component\HttpFoundation\BinaryFileResponse;
 
 #[Layout('components.layouts.app')]
 class Report extends Component
@@ -18,29 +20,45 @@ class Report extends Component
 
     public function mount(Trip $trip): void
     {
-        $user = Auth::user() ?? User::first();
-        if ($user && $trip->user_id !== $user->id) {
+        $user = Auth::user();
+        if (!$user) {
+            abort(401);
+        }
+        if ($trip->user_id !== $user->id) {
             abort(403, 'Akses ditolak. Anda hanya dapat melihat rekap perjalanan milik sendiri.');
         }
 
         $this->trip = $trip;
     }
 
-    public function exportExcel()
+    public function exportExcel(): BinaryFileResponse
     {
+        $user = Auth::user();
+        if (!$user) {
+            abort(401);
+        }
+        abort_if($this->trip->user_id !== $user->id, 403);
+
         $fileName = 'SIMAU_Rekap_' . str_replace(' ', '_', $this->trip->name) . '_' . Carbon::now()->format('Ymd_His') . '.xlsx';
         return Excel::download(new SingleTripReportExport($this->trip), $fileName);
     }
 
     public function markAsCompleted(): void
     {
+        $user = Auth::user();
+        if (!$user) {
+            abort(401);
+        }
+        abort_if($this->trip->user_id !== $user->id, 403);
+
         $this->trip->update(['status' => 'completed']);
         $this->dispatch('notify', message: 'Trip telah ditandai Selesai.');
     }
 
-    public function render()
+    public function render(): View
     {
-        $transactions = $this->trip->transactions()
+        $transactions = Transaction::where('trip_id', $this->trip->id)
+            ->where('type', 'expense')
             ->with(['category', 'wallet'])
             ->orderBy('transaction_date', 'desc')
             ->get();

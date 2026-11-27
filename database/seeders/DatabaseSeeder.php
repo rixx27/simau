@@ -18,17 +18,19 @@ class DatabaseSeeder extends Seeder
      */
     public function run(): void
     {
-        // 1. Default User
-        $user = User::create([
-            'name' => 'Krisna Pradana',
-            'username' => 'krisnapradana',
-            'email' => 'krisna@simau.app',
-            'phone' => '+62 812-3456-7890',
-            'password' => Hash::make('password'),
-            'avatar_path' => 'avatars/krisna.png',
-            'biometric_enabled' => true,
-            'email_verified_at' => now(),
-        ]);
+        // 1. Default User (without starter-kit observer because seeded wallets are created below)
+        $user = User::withoutEvents(function () {
+            return User::create([
+                'name' => 'Krisna Pradana',
+                'username' => 'krisnapradana',
+                'email' => 'krisna@simau.app',
+                'phone' => '+62 812-3456-7890',
+                'password' => Hash::make('password'),
+                'avatar_path' => 'avatars/krisna.png',
+                'biometric_enabled' => true,
+                'email_verified_at' => now(),
+            ]);
+        });
 
         // 2. Wallets
         $operationalWallet = Wallet::create([

@@ -325,12 +325,21 @@
                             <input
                                 type="number"
                                 wire:model.live="depositAmount"
-                                step="10000"
-                                min="5000"
+                                step="any"
+                                min="0"
                                 class="w-44 sm:w-56 text-2xl sm:text-3xl font-extrabold text-white bg-transparent border-0 focus:ring-0 p-0 font-mono-numbers focus:outline-none text-center"
                                 placeholder="0"
                             />
                         </div>
+                        @if($depositAmount && is_numeric($depositAmount) && $depositAmount > 0)
+                            @php
+                                $val = (float) $depositAmount;
+                                $formatted = (floor($val) == $val) ? number_format($val, 0, ',', '.') : number_format($val, 2, ',', '.');
+                            @endphp
+                            <div class="text-center text-[11px] text-[#00E676] font-mono-numbers pb-1">
+                                Terbaca: Rp {{ $formatted }}
+                            </div>
+                        @endif
                         @error('depositAmount') <p class="text-xs text-red-400 text-center mt-1">{{ $message }}</p> @enderror
 
                         <!-- Quick Increment Buttons -->
@@ -498,6 +507,8 @@
                             <input
                                 type="number"
                                 wire:model="targetAmount"
+                                step="any"
+                                min="0"
                                 placeholder="5000000"
                                 class="w-full bg-[#0D0E12] border border-[#262C37] rounded-xl px-3 py-2 text-xs text-white focus:outline-none focus:border-[#5865F2]"
                             />
@@ -510,6 +521,8 @@
                             <input
                                 type="number"
                                 wire:model="initialBalance"
+                                step="any"
+                                min="0"
                                 placeholder="0"
                                 class="w-full bg-[#0D0E12] border border-[#262C37] rounded-xl px-3 py-2 text-xs text-white focus:outline-none focus:border-[#5865F2]"
                             />
@@ -521,6 +534,8 @@
                                 <input
                                     type="number"
                                     wire:model="dailyLimit"
+                                    step="any"
+                                    min="0"
                                     placeholder="350000"
                                     class="w-full bg-[#0D0E12] border border-[#262C37] rounded-xl px-3 py-2 text-xs text-white focus:outline-none focus:border-[#5865F2]"
                                 />

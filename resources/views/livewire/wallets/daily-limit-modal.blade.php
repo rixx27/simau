@@ -82,12 +82,21 @@
                                 <input
                                     type="number"
                                     wire:model.live="dailyLimit"
-                                    step="10000"
-                                    min="10000"
-                                    class="w-48 md:w-56 text-2xl md:text-3xl font-extrabold bg-transparent border-0 focus:ring-0 p-0 text-white font-mono-numbers focus:outline-none"
+                                    step="any"
+                                    min="0"
+                                    class="w-48 md:w-56 text-2xl md:text-3xl font-extrabold bg-transparent border-0 focus:ring-0 p-0 text-white font-mono-numbers focus:outline-none text-center"
                                     placeholder="350000"
                                 />
                             </div>
+                            @if($dailyLimit && is_numeric($dailyLimit) && $dailyLimit > 0)
+                                @php
+                                    $val = (float) $dailyLimit;
+                                    $formatted = (floor($val) == $val) ? number_format($val, 0, ',', '.') : number_format($val, 2, ',', '.');
+                                @endphp
+                                <div class="text-center text-[11px] text-[#5865F2] font-mono-numbers pb-1">
+                                    Terbaca: Rp {{ $formatted }}
+                                </div>
+                            @endif
                             @error('dailyLimit')
                                 <p class="text-xs text-red-400 text-center mt-1">{{ $message }}</p>
                             @enderror

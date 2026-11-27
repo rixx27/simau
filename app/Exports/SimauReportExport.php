@@ -3,6 +3,7 @@
 namespace App\Exports;
 
 use App\Models\User;
+use Carbon\Carbon;
 use Maatwebsite\Excel\Concerns\Export;
 use Maatwebsite\Excel\Concerns\Exportable;
 use Maatwebsite\Excel\Concerns\WithMultipleSheets;
@@ -11,15 +12,21 @@ class SimauReportExport implements Export, WithMultipleSheets
 {
     use Exportable;
 
-    protected ?User $user;
-    protected ?int $month;
-    protected ?int $year;
+    protected User $user;
+    protected int $month;
+    protected int $year;
 
     public function __construct(?User $user = null, ?int $month = null, ?int $year = null)
     {
-        $this->user = $user ?? User::first();
-        $this->month = $month ?? 11;
-        $this->year = $year ?? 2026;
+        $resolvedUser = $user ?? auth()->user();
+        if (!$resolvedUser) {
+            abort(401);
+        }
+
+        $now = Carbon::now();
+        $this->user = $resolvedUser;
+        $this->month = $month ?? $now->month;
+        $this->year = $year ?? $now->year;
     }
 
     public function sheets(): array

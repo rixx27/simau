@@ -4,6 +4,9 @@
         <div
             x-data
             @keydown.escape.window="$wire.closeModal()"
+            role="dialog"
+            aria-modal="true"
+            aria-label="Form Transaksi"
             class="fixed inset-0 z-50 overflow-y-auto bg-black/80 backdrop-blur-sm flex justify-center items-end md:items-center p-0 md:p-4 transition-all duration-300"
         >
             <!-- Modal Card (Bottom sheet on mobile, centered modal on desktop) -->
@@ -43,6 +46,7 @@
                     <button
                         wire:click="closeModal"
                         type="button"
+                        aria-label="Tutup modal transaksi"
                         class="w-8 h-8 rounded-full bg-[#1E2028] border border-[#262C37] flex items-center justify-center text-[#9CA3AF] hover:text-white hover:border-[#5865F2] transition-colors cursor-pointer"
                     >
                         <svg class="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke-width="2.5" stroke="currentColor">
@@ -106,12 +110,21 @@
                             <input
                                 type="number"
                                 wire:model.live="amount"
-                                step="1000"
+                                step="any"
                                 min="0"
                                 class="w-44 md:w-56 text-2xl md:text-3xl font-extrabold bg-transparent border-0 focus:ring-0 p-0 font-mono-numbers focus:outline-none {{ $mode === 'income' ? 'text-[#00E676]' : 'text-white' }}"
                                 placeholder="0"
                             />
                         </div>
+                        @if($amount && is_numeric($amount) && $amount > 0)
+                            @php
+                                $val = (float) $amount;
+                                $formatted = (floor($val) == $val) ? number_format($val, 0, ',', '.') : number_format($val, 2, ',', '.');
+                            @endphp
+                            <div class="text-center text-[11px] {{ $mode === 'income' ? 'text-[#00E676]' : 'text-[#818CF8]' }} font-mono-numbers pb-1">
+                                Terbaca: Rp {{ $formatted }}
+                            </div>
+                        @endif
                         @error('amount')
                             <p class="text-xs text-red-400 text-center mt-1">{{ $message }}</p>
                         @enderror
@@ -393,21 +406,16 @@
                     <button
                         type="button"
                         wire:click="save"
-                        class="w-full py-3.5 px-4 rounded-2xl {{ $mode === 'income' ? 'bg-gradient-to-r from-[#00E676] to-[#00C853] hover:from-[#00C853] hover:to-[#00B048] text-black font-extrabold shadow-xl shadow-[#00E676]/30 hover:shadow-[#00E676]/50' : 'bg-gradient-to-r from-[#5865F2] to-[#4F46E5] hover:from-[#4F46E5] hover:to-[#4338CA] text-white font-bold shadow-xl shadow-[#5865F2]/40 hover:shadow-[#5865F2]/60' }} text-sm tracking-wide flex items-center justify-center gap-2 active:scale-[0.98] transition-all duration-200 cursor-pointer"
+                        wire:loading.attr="disabled"
+                        wire:target="save"
+                        class="w-full py-3.5 px-4 rounded-2xl {{ $mode === 'income' ? 'bg-gradient-to-r from-[#00E676] to-[#00C853] hover:from-[#00C853] hover:to-[#00B048] text-black font-extrabold shadow-xl shadow-[#00E676]/30 hover:shadow-[#00E676]/50' : 'bg-gradient-to-r from-[#5865F2] to-[#4F46E5] hover:from-[#4F46E5] hover:to-[#4338CA] text-white font-bold shadow-xl shadow-[#5865F2]/40 hover:shadow-[#5865F2]/60' }} text-sm tracking-wide flex items-center justify-center gap-2 active:scale-[0.98] transition-all duration-200 cursor-pointer disabled:opacity-60 disabled:cursor-not-allowed"
                     >
-                        <span>{{ $mode === 'income' ? '+ Tambah Uang ke Kas Sekarang' : 'Simpan Transaksi' }}</span>
-                        <svg class="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke-width="2.5" stroke="currentColor">
+                        <span wire:loading.remove wire:target="save">{{ $mode === 'income' ? '+ Tambah Uang ke Kas Sekarang' : 'Simpan Transaksi' }}</span>
+                        <span wire:loading wire:target="save">Menyimpan...</span>
+                        <svg wire:loading.remove wire:target="save" class="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke-width="2.5" stroke="currentColor">
                             <path stroke-linecap="round" stroke-linejoin="round" d="M13.5 4.5 21 12m0 0-7.5 7.5M21 12H3" />
                         </svg>
                     </button>
-
-                    <div class="flex items-center justify-center gap-1.5 text-[11px] text-[#9CA3AF]">
-                        <svg class="w-3.5 h-3.5 text-[#00E676]" fill="none" viewBox="0 0 24 24" stroke-width="2.5" stroke="currentColor">
-                            <path stroke-linecap="round" stroke-linejoin="round" d="m4.5 12.75 6 6 9-13.5" />
-                        </svg>
-                        <span>Tersimpan aman di buku kas SIMAU Ledger</span>
-                    </div>
-                </div>
 
                     <div class="flex items-center justify-center gap-1.5 text-[11px] text-[#9CA3AF]">
                         <svg class="w-3.5 h-3.5 text-[#00E676]" fill="none" viewBox="0 0 24 24" stroke-width="2.5" stroke="currentColor">

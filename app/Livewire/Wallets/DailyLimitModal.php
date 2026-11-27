@@ -2,30 +2,33 @@
 
 namespace App\Livewire\Wallets;
 
+use App\Concerns\ParsesNominal;
 use App\Models\Transaction;
-use App\Models\User;
 use App\Models\Wallet;
 use Carbon\Carbon;
+use Illuminate\Contracts\View\View;
 use Illuminate\Support\Facades\Auth;
 use Livewire\Attributes\On;
 use Livewire\Component;
 
 class DailyLimitModal extends Component
 {
+    use ParsesNominal;
+
     public bool $isOpen = false;
     public ?int $walletId = null;
     public ?Wallet $wallet = null;
 
     public bool $isEnabled = true;
-    public ?int $dailyLimit = 350000;
+    public mixed $dailyLimit = 350000;
     public float $todaySpent = 0;
 
     #[On('open-daily-limit-modal')]
     public function openModal(?int $walletId = null): void
     {
-        $user = Auth::user() ?? User::first();
+        $user = Auth::user();
         if (!$user) {
-            return;
+            abort(401);
         }
 
         if ($walletId) {
@@ -44,7 +47,7 @@ class DailyLimitModal extends Component
 
         $this->walletId = $this->wallet->id;
         $this->isEnabled = (bool) ($this->wallet->daily_limit && $this->wallet->daily_limit > 0);
-        $this->dailyLimit = $this->wallet->daily_limit ? (int) $this->wallet->daily_limit : 350000;
+        $this->dailyLimit = $this->wallet->daily_limit ? (float) $this->wallet->daily_limit : 350000;
 
         // Hitung pengeluaran hari ini dari dompet ini
         $this->todaySpent = (float) Transaction::where('wallet_id', $this->wallet->id)
@@ -60,15 +63,16 @@ class DailyLimitModal extends Component
         $this->isOpen = false;
     }
 
-    public function setPreset(int $amount): void
+    public function setPreset(int|float $amount): void
     {
         $this->dailyLimit = $amount;
         $this->isEnabled = true;
     }
 
-    public function addAmount(int $amount): void
+    public function addAmount(int|float $amount): void
     {
-        $this->dailyLimit = ($this->dailyLimit ?? 0) + $amount;
+        $current = $this->parseNominal($this->dailyLimit);
+        $this->dailyLimit = $current + $amount;
         $this->isEnabled = true;
     }
 
@@ -82,34 +86,44 @@ class DailyLimitModal extends Component
 
     public function save(): void
     {
-        if (!$this->wallet) {
+        $user = Auth::user();
+        if (!$user) {
+            abort(401);
+        }
+
+        if (!$this->walletId) {
             return;
         }
 
+        $wallet = Wallet::where('user_id', $user->id)->findOrFail($this->walletId);
+        $this->wallet = $wallet;
+
         if ($this->isEnabled) {
+            $this->dailyLimit = $this->parseNominal($this->dailyLimit);
+
             $this->validate([
-                'dailyLimit' => 'required|numeric|min:10000|max:100000000',
+                'dailyLimit' => 'required|numeric|min:1000|max:100000000',
             ], [
                 'dailyLimit.required' => 'Masukkan nominal batas harian.',
-                'dailyLimit.min' => 'Batas harian minimal Rp 10.000.',
+                'dailyLimit.min' => 'Batas harian minimal Rp 1.000.',
                 'dailyLimit.max' => 'Batas harian maksimal Rp 100.000.000.',
             ]);
 
-            $this->wallet->daily_limit = $this->dailyLimit;
+            $wallet->daily_limit = $this->dailyLimit;
         } else {
-            $this->wallet->daily_limit = null;
+            $wallet->daily_limit = null;
         }
 
-        $this->wallet->save();
+        $wallet->save();
 
         $this->dispatch('transaction-saved');
-        $this->dispatch('daily-limit-updated', walletId: $this->wallet->id, limit: $this->wallet->daily_limit);
+        $this->dispatch('daily-limit-updated', walletId: $wallet->id, limit: $wallet->daily_limit);
         $this->dispatch('notify', message: 'Batas pengeluaran harian berhasil disimpan!');
 
         $this->closeModal();
     }
 
-    public function render()
+    public function render(): View
     {
         return view('livewire.wallets.daily-limit-modal');
     }

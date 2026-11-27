@@ -12,6 +12,7 @@ use App\Livewire\Wallets\Index as WalletsIndex;
 use App\Models\Trip;
 use App\Models\User;
 use Carbon\Carbon;
+use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Facades\Route;
 use Maatwebsite\Excel\Facades\Excel;
@@ -26,18 +27,31 @@ Route::middleware([EnsureSimauUserAuthenticated::class])->group(function () {
     Route::get('/profile', ProfileEdit::class)->name('profile');
 
     Route::get('/trips/{trip}/export', function (Trip $trip) {
-        $user = Auth::user() ?? User::first();
-        if ($user && $trip->user_id !== $user->id) {
-            abort(403);
+        $user = Auth::user();
+        if (!$user) {
+            abort(401);
         }
+        abort_if($trip->user_id !== $user->id, 403);
+
         $fileName = 'SIMAU_Rekap_' . str_replace(' ', '_', $trip->name) . '_' . Carbon::now()->format('Ymd_His') . '.xlsx';
         return Excel::download(new SingleTripReportExport($trip), $fileName);
     })->name('trips.export');
 
-    Route::get('/export/excel', function () {
-        $user = Auth::user() ?? User::first();
+    Route::get('/export/excel', function (Request $request) {
+        $user = Auth::user();
+        if (!$user) {
+            abort(401);
+        }
+
+        $validated = $request->validate([
+            'month' => 'nullable|integer|min:1|max:12',
+            'year' => 'nullable|integer|min:2000|max:2100',
+        ]);
+
+        $month = isset($validated['month']) ? (int) $validated['month'] : null;
+        $year = isset($validated['year']) ? (int) $validated['year'] : null;
         $fileName = 'SIMAU_Laporan_Keuangan_' . Carbon::now()->format('Ymd_His') . '.xlsx';
-        return Excel::download(new SimauReportExport($user), $fileName);
+        return Excel::download(new SimauReportExport($user, $month, $year), $fileName);
     })->name('export.excel');
 });
 

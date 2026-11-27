@@ -234,6 +234,27 @@ class SimauTest extends TestCase
         ]);
     }
 
+    public function test_can_deposit_with_decimal_amount()
+    {
+        $user = User::first();
+        $goalWallet = Wallet::where('user_id', $user->id)->where('type', 'trip')->first();
+
+        $initialGoal = $goalWallet->current_balance;
+        $deposit = 75500.50;
+
+        Livewire::actingAs($user)
+            ->test(WalletsIndex::class)
+            ->call('openDepositModal', $goalWallet->id)
+            ->set('depositAmount', $deposit)
+            ->set('sourceMode', 'external')
+            ->set('depositNote', 'Nabung desimal')
+            ->call('saveDeposit')
+            ->assertDispatched('transaction-saved');
+
+        $goalWallet->refresh();
+        $this->assertEquals((float)($initialGoal + $deposit), (float)$goalWallet->current_balance);
+    }
+
     public function test_can_update_daily_spending_limit()
     {
         $user = User::first();
@@ -495,5 +516,157 @@ class SimauTest extends TestCase
             ->call('selectWeek', 3)
             ->assertDispatched('week-selected', week: 3)
             ->assertSee('Min 3');
+    }
+
+    public function test_user_cannot_create_transaction_on_another_users_wallet_or_trip()
+    {
+        $victim = User::first();
+        $victimWallet = Wallet::where('user_id', $victim->id)->where('type', 'operational')->first();
+        $victimTrip = Trip::where('user_id', $victim->id)->first();
+        $category = Category::where('type', 'expense')->first();
+        $victimInitialBalance = $victimWallet->current_balance;
+
+        $attacker = User::factory()->create();
+
+        Livewire::actingAs($attacker)
+            ->test(CreateModal::class)
+            ->call('openModal', 'daily')
+            ->set('amount', 50000)
+            ->set('selectedWalletId', $victimWallet->id)
+            ->set('selectedCategoryId', $category->id)
+            ->set('title', 'Percobaan IDOR Wallet')
+            ->set('transactionDate', now()->format('Y-m-d\TH:i'))
+            ->call('save')
+            ->assertHasErrors(['selectedWalletId']);
+
+        $attackerWallet = Wallet::where('user_id', $attacker->id)->where('type', 'operational')->first();
+        $attackerWallet->update(['current_balance' => 500000]);
+
+        Livewire::actingAs($attacker)
+            ->test(CreateModal::class)
+            ->call('openModal', 'trip')
+            ->set('amount', 50000)
+            ->set('selectedWalletId', $attackerWallet->id)
+            ->set('selectedTripId', $victimTrip->id)
+            ->set('selectedCategoryId', $category->id)
+            ->set('title', 'Percobaan IDOR Trip')
+            ->set('transactionDate', now()->format('Y-m-d\TH:i'))
+            ->call('save')
+            ->assertHasErrors(['selectedTripId']);
+
+        $victimWallet->refresh();
+        $this->assertEquals($victimInitialBalance, $victimWallet->current_balance);
+        $this->assertDatabaseMissing('transactions', ['title' => 'Percobaan IDOR Wallet']);
+        $this->assertDatabaseMissing('transactions', ['title' => 'Percobaan IDOR Trip']);
+    }
+
+    public function test_user_cannot_deposit_using_another_users_wallet()
+    {
+        $victim = User::first();
+        $victimWallet = Wallet::where('user_id', $victim->id)->where('type', 'operational')->first();
+        $victimInitialBalance = $victimWallet->current_balance;
+
+        $attacker = User::factory()->create();
+        $attackerSaving = Wallet::where('user_id', $attacker->id)->where('type', 'saving')->first();
+
+        Livewire::actingAs($attacker)
+            ->test(WalletsIndex::class)
+            ->call('openDepositModal', $attackerSaving->id)
+            ->set('depositAmount', 100000)
+            ->set('sourceMode', 'operational')
+            ->set('sourceWalletId', $victimWallet->id)
+            ->call('saveDeposit')
+            ->assertHasErrors(['sourceWalletId']);
+
+        $victimWallet->refresh();
+        $this->assertEquals($victimInitialBalance, $victimWallet->current_balance);
+    }
+
+    public function test_expense_and_transfer_reject_insufficient_balance()
+    {
+        $user = User::factory()->create();
+        $opWallet = Wallet::where('user_id', $user->id)->where('type', 'operational')->first();
+        $savingWallet = Wallet::where('user_id', $user->id)->where('type', 'saving')->first();
+        $category = Category::where('type', 'expense')->first();
+
+        Livewire::actingAs($user)
+            ->test(CreateModal::class)
+            ->call('openModal', 'daily')
+            ->set('amount', 50000)
+            ->set('selectedWalletId', $opWallet->id)
+            ->set('selectedCategoryId', $category->id)
+            ->set('title', 'Belanja Melebihi Saldo')
+            ->set('transactionDate', now()->format('Y-m-d\TH:i'))
+            ->call('save')
+            ->assertHasErrors(['amount']);
+
+        Livewire::actingAs($user)
+            ->test(WalletsIndex::class)
+            ->call('openDepositModal', $savingWallet->id)
+            ->set('depositAmount', 50000)
+            ->set('sourceMode', 'operational')
+            ->set('sourceWalletId', $opWallet->id)
+            ->call('saveDeposit')
+            ->assertHasErrors(['depositAmount']);
+    }
+
+    public function test_creating_inline_category_in_income_mode_sets_income_type()
+    {
+        $user = User::first();
+
+        Livewire::actingAs($user)
+            ->test(CreateModal::class)
+            ->call('openModal', 'income')
+            ->set('newCategoryName', 'Dividen Saham')
+            ->set('newCategoryColor', '#00E676')
+            ->call('saveNewCategory')
+            ->assertHasNoErrors();
+
+        $this->assertDatabaseHas('categories', [
+            'user_id' => $user->id,
+            'name' => 'Dividen Saham',
+            'type' => 'income',
+        ]);
+    }
+
+    public function test_changing_email_in_profile_requires_current_password_and_resets_verification()
+    {
+        $user = User::factory()->create([
+            'email_verified_at' => now(),
+            'password' => bcrypt('SecretPass123!'),
+        ]);
+
+        Livewire::actingAs($user)
+            ->test(ProfileEdit::class)
+            ->set('email', 'newemail@example.com')
+            ->call('save')
+            ->assertHasErrors(['current_password']);
+
+        Livewire::actingAs($user)
+            ->test(ProfileEdit::class)
+            ->set('email', 'newemail@example.com')
+            ->set('current_password', 'SecretPass123!')
+            ->call('save')
+            ->assertHasNoErrors();
+
+        $user->refresh();
+        $this->assertEquals('newemail@example.com', $user->email);
+        $this->assertNull($user->email_verified_at);
+    }
+
+    public function test_spreadsheet_value_escapes_formula_prefixes()
+    {
+        $this->assertEquals("'=CMD()", \App\Support\SpreadsheetValue::escape('=CMD()'));
+        $this->assertEquals("'+1+1", \App\Support\SpreadsheetValue::escape('+1+1'));
+        $this->assertEquals("'-100", \App\Support\SpreadsheetValue::escape('-100'));
+        $this->assertEquals("'@SUM(A1)", \App\Support\SpreadsheetValue::escape('@SUM(A1)'));
+        $this->assertEquals('Makan Siang', \App\Support\SpreadsheetValue::escape('Makan Siang'));
+    }
+
+    public function test_toast_listener_is_present_in_main_layout()
+    {
+        $response = $this->get('/dashboard');
+        $response->assertStatus(200);
+        $response->assertSee('@notify.window', false);
     }
 }

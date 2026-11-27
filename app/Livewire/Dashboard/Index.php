@@ -5,14 +5,15 @@ namespace App\Livewire\Dashboard;
 use App\Exports\SimauReportExport;
 use App\Models\Transaction;
 use App\Models\Trip;
-use App\Models\User;
 use App\Models\Wallet;
 use Carbon\Carbon;
+use Illuminate\Contracts\View\View;
 use Illuminate\Support\Facades\Auth;
 use Livewire\Attributes\Layout;
 use Livewire\Attributes\On;
 use Livewire\Component;
 use Maatwebsite\Excel\Facades\Excel;
+use Symfony\Component\HttpFoundation\BinaryFileResponse;
 
 #[Layout('components.layouts.app')]
 class Index extends Component
@@ -30,17 +31,21 @@ class Index extends Component
         $this->showBalance = !$this->showBalance;
     }
 
-    public function exportExcel()
+    public function exportExcel(): BinaryFileResponse
     {
-        $user = Auth::user() ?? User::first();
+        $user = Auth::user();
+        if (!$user) {
+            abort(401);
+        }
+
         $fileName = 'SIMAU_Report_' . Carbon::now()->format('Ymd_His') . '.xlsx';
 
         return Excel::download(new SimauReportExport($user), $fileName);
     }
 
-    public function render()
+    public function render(): View
     {
-        $user = Auth::user() ?? User::first();
+        $user = Auth::user();
         $userId = $user?->id;
 
         // Wallets
@@ -49,24 +54,22 @@ class Index extends Component
         $operationalWallet = $wallets->where('type', 'operational')->first();
 
         // Calculate Batas Harian (Daily Limit)
-        $dailyLimit = $operationalWallet?->daily_limit ?? 350000;
+        $dailyLimit = $operationalWallet?->daily_limit;
+        $referenceDate = Carbon::today()->toDateString();
 
-        $today = Carbon::now();
-        $hasToday = Transaction::where('user_id', $userId)
-            ->whereDate('transaction_date', $today->toDateString())
-            ->exists();
+        // Daily expenses from operational wallet today
+        $todayExpenses = $operationalWallet
+            ? Transaction::where('user_id', $userId)
+                ->where('wallet_id', $operationalWallet->id)
+                ->where('type', 'expense')
+                ->whereDate('transaction_date', $referenceDate)
+                ->sum('amount')
+            : 0;
 
-        $referenceDate = $hasToday ? $today->toDateString() : '2026-11-13';
-
-        // Daily expenses (transactions not tied to trip, or today's operational expenses)
-        $todayExpenses = Transaction::where('user_id', $userId)
-            ->where('wallet_id', $operationalWallet?->id)
-            ->where('type', 'expense')
-            ->whereDate('transaction_date', $referenceDate)
-            ->sum('amount');
-
-        $remainingDaily = max(0, $dailyLimit - $todayExpenses);
-        $dailyPercentRemaining = $dailyLimit > 0 ? round(($remainingDaily / $dailyLimit) * 100) : 0;
+        $remainingDaily = $dailyLimit ? max(0, $dailyLimit - $todayExpenses) : 0;
+        $dailyPercentRemaining = ($dailyLimit && $dailyLimit > 0)
+            ? round(($remainingDaily / $dailyLimit) * 100)
+            : 0;
 
         // Active Trip or Saving Goal
         $activeTrip = Trip::where('user_id', $userId)
