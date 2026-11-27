@@ -7,6 +7,7 @@ use App\Models\Category;
 use App\Models\Transaction;
 use App\Models\Trip;
 use App\Models\Wallet;
+use App\Services\TransactionLedgerService;
 use Carbon\Carbon;
 use Illuminate\Contracts\View\View;
 use Illuminate\Support\Facades\Auth;
@@ -21,6 +22,7 @@ class CreateModal extends Component
     use ParsesNominal;
 
     public bool $isOpen = false;
+    public ?int $editingTransactionId = null;
 
     // Form fields
     public string $mode = 'daily'; // 'daily' (Pengeluaran Harian) or 'trip' (Pengeluaran Trip)
@@ -88,6 +90,9 @@ class CreateModal extends Component
     #[On('open-transaction-modal')]
     public function openModal(string $mode = 'daily', ?int $walletId = null, ?int $tripId = null): void
     {
+        $this->editingTransactionId = null;
+        $this->note = '';
+        $this->transactionDate = Carbon::now()->format('Y-m-d\TH:i');
         $this->mode = in_array($mode, ['daily', 'income', 'trip']) ? $mode : 'daily';
         $this->loadDefaults();
 
@@ -104,9 +109,39 @@ class CreateModal extends Component
         $this->isOpen = true;
     }
 
+    #[On('open-edit-transaction-modal')]
+    public function openEditModal(int $transactionId): void
+    {
+        $user = Auth::user();
+        if (!$user) {
+            abort(401);
+        }
+
+        $tx = Transaction::where('user_id', $user->id)->findOrFail($transactionId);
+        if ($tx->type === 'transfer') {
+            $this->dispatch('notify', message: 'Transaksi transfer tabungan hanya dapat dihapus untuk menjaga kesesuaian dua dompet.', type: 'error');
+            return;
+        }
+
+        $this->editingTransactionId = $tx->id;
+        $this->mode = $tx->type === 'income' ? 'income' : ($tx->trip_id ? 'trip' : 'daily');
+        $this->amount = (float) $tx->amount;
+        $this->selectedWalletId = $tx->wallet_id;
+        $this->selectedCategoryId = $tx->category_id;
+        $this->selectedTripId = $tx->trip_id;
+        $this->title = $tx->title;
+        $this->note = $tx->note ?? '';
+        $this->transactionDate = $tx->transaction_date->format('Y-m-d\TH:i');
+        $this->isCreatingCategory = false;
+        $this->showDatePicker = false;
+        $this->resetValidation();
+        $this->isOpen = true;
+    }
+
     public function closeModal(): void
     {
         $this->isOpen = false;
+        $this->editingTransactionId = null;
         $this->isCreatingCategory = false;
         $this->showDatePicker = false;
     }
@@ -175,6 +210,27 @@ class CreateModal extends Component
         $this->isCreatingCategory = false;
     }
 
+    public function deleteCategory(int $categoryId): void
+    {
+        $user = Auth::user();
+        if (!$user) {
+            abort(401);
+        }
+
+        $category = Category::where('user_id', $user->id)->findOrFail($categoryId);
+        $category->delete();
+
+        if ($this->selectedCategoryId === $categoryId) {
+            $fallback = Category::where(function ($query) use ($user) {
+                $query->whereNull('user_id')->orWhere('user_id', $user->id);
+            })->where('type', $this->mode === 'income' ? 'income' : 'expense')->first();
+
+            $this->selectedCategoryId = $fallback?->id;
+        }
+
+        $this->dispatch('notify', message: 'Kategori kustom berhasil dihapus.');
+    }
+
     public function save(): void
     {
         $this->amount = $this->parseNominal($this->amount);
@@ -197,6 +253,7 @@ class CreateModal extends Component
                 }),
             ],
             'title' => 'required|string|max:150',
+            'note' => 'nullable|string|max:500',
             'transactionDate' => 'required|date',
         ];
 
@@ -218,8 +275,29 @@ class CreateModal extends Component
         ]);
 
         $isIncome = $this->mode === 'income';
+        $category = Category::where(function ($query) use ($user) {
+            $query->whereNull('user_id')->orWhere('user_id', $user->id);
+        })->findOrFail($this->selectedCategoryId);
 
-        DB::transaction(function () use ($user, $isIncome) {
+        if ($this->editingTransactionId) {
+            app(TransactionLedgerService::class)->updateTransaction($user, $this->editingTransactionId, [
+                'wallet_id' => (int) $this->selectedWalletId,
+                'trip_id' => $this->mode === 'trip' ? $this->selectedTripId : null,
+                'category_id' => $category->id,
+                'type' => $isIncome ? 'income' : 'expense',
+                'amount' => $this->amount,
+                'title' => $this->title,
+                'note' => $this->note ?: null,
+                'transaction_date' => Carbon::parse($this->transactionDate),
+            ]);
+
+            $this->dispatch('transaction-saved');
+            $this->dispatch('notify', message: 'Transaksi berhasil diperbarui!');
+            $this->closeModal();
+            return;
+        }
+
+        DB::transaction(function () use ($user, $isIncome, $category) {
             $wallet = Wallet::where('user_id', $user->id)
                 ->lockForUpdate()
                 ->findOrFail($this->selectedWalletId);
@@ -229,10 +307,6 @@ class CreateModal extends Component
                     'amount' => 'Saldo dompet tidak mencukupi (tersedia: ' . $wallet->formatted_balance . ').',
                 ]);
             }
-
-            $category = Category::where(function ($query) use ($user) {
-                $query->whereNull('user_id')->orWhere('user_id', $user->id);
-            })->findOrFail($this->selectedCategoryId);
 
             Transaction::create([
                 'user_id' => $user->id,
@@ -258,6 +332,24 @@ class CreateModal extends Component
         $this->dispatch('transaction-saved');
         $this->dispatch('notify', message: $isIncome ? 'Pemasukan berhasil ditambahkan ke saldo kas!' : 'Pengeluaran berhasil dicatat!');
         $this->closeModal();
+    }
+
+    public function deleteEditingTransaction(): void
+    {
+        $user = Auth::user();
+        if (!$user || !$this->editingTransactionId) {
+            return;
+        }
+
+        try {
+            app(TransactionLedgerService::class)->deleteTransaction($user, $this->editingTransactionId);
+            $this->dispatch('transaction-saved');
+            $this->dispatch('notify', message: 'Transaksi berhasil dihapus dan saldo disesuaikan.');
+            $this->closeModal();
+        } catch (ValidationException $e) {
+            $message = collect($e->errors())->flatten()->first() ?? 'Transaksi gagal dihapus.';
+            $this->addError('amount', $message);
+        }
     }
 
     public function render(): View

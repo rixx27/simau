@@ -1,9 +1,8 @@
-const CACHE_NAME = 'simau-pwa-v1';
+const CACHE_NAME = 'simau-pwa-v2';
 const STATIC_ASSETS = [
-  '/',
   '/manifest.json',
   '/favicon.png',
-  '/logo.png',
+  '/images/logo.png',
   '/apple-touch-icon.png'
 ];
 

@@ -19,22 +19,30 @@ class Index extends Component
 {
     use ParsesNominal;
 
-    // Create new wallet / target modal
+    // Create / Edit wallet / target modal
     public bool $isCreateModalOpen = false;
+    public ?int $editingWalletId = null;
     public string $name = '';
     public string $accountLabel = '';
     public string $type = 'trip'; // operational, trip, saving
-    public $initialBalance = 0;
-    public $targetAmount = null;
-    public $dailyLimit = null;
+    public mixed $initialBalance = 0;
+    public mixed $targetAmount = null;
+    public mixed $dailyLimit = null;
 
     // Deposit / Tambah Saldo Tabungan modal
     public bool $isDepositModalOpen = false;
     public ?int $depositWalletId = null;
-    public $depositAmount = 100000;
+    public mixed $depositAmount = 100000;
     public string $sourceMode = 'operational'; // 'operational' (sisihkan kas) or 'external' (dana masuk baru)
     public ?int $sourceWalletId = null;
     public string $depositNote = '';
+
+    // Transfer / Cairkan Dana antar dompet modal
+    public bool $isTransferModalOpen = false;
+    public ?int $fromWalletId = null;
+    public ?int $toWalletId = null;
+    public mixed $transferAmount = 100000;
+    public string $transferNote = '';
 
     public function mount(): void
     {
@@ -51,17 +59,38 @@ class Index extends Component
         // Re-renders component
     }
 
-    // --- CREATE NEW WALLET METHODS ---
+    // --- CREATE / EDIT / DELETE WALLET METHODS ---
     public function openCreateModal(): void
     {
-        $this->reset(['name', 'accountLabel', 'type', 'initialBalance', 'targetAmount', 'dailyLimit']);
+        $this->reset(['editingWalletId', 'name', 'accountLabel', 'type', 'initialBalance', 'targetAmount', 'dailyLimit']);
         $this->type = 'trip';
+        $this->resetValidation();
+        $this->isCreateModalOpen = true;
+    }
+
+    public function openEditModal(int $walletId): void
+    {
+        $user = Auth::user();
+        if (!$user) {
+            abort(401);
+        }
+
+        $wallet = Wallet::where('user_id', $user->id)->findOrFail($walletId);
+        $this->editingWalletId = $wallet->id;
+        $this->name = $wallet->name;
+        $this->accountLabel = $wallet->account_label ?? '';
+        $this->type = $wallet->type;
+        $this->initialBalance = (float) $wallet->current_balance;
+        $this->targetAmount = $wallet->target_amount ? (float) $wallet->target_amount : null;
+        $this->dailyLimit = $wallet->daily_limit ? (float) $wallet->daily_limit : null;
+        $this->resetValidation();
         $this->isCreateModalOpen = true;
     }
 
     public function closeCreateModal(): void
     {
         $this->isCreateModalOpen = false;
+        $this->editingWalletId = null;
     }
 
     public function saveWallet(): void
@@ -90,6 +119,22 @@ class Index extends Component
         $user = Auth::user();
         if (!$user) {
             abort(401);
+        }
+
+        if ($this->editingWalletId) {
+            $wallet = Wallet::where('user_id', $user->id)->findOrFail($this->editingWalletId);
+            $wallet->update([
+                'name' => $this->name,
+                'account_label' => $this->accountLabel ?: null,
+                'target_amount' => $wallet->type !== 'operational' ? ($this->targetAmount ?: null) : null,
+                'daily_limit' => $wallet->type === 'operational' ? ($this->dailyLimit ?: null) : null,
+            ]);
+
+            $this->isCreateModalOpen = false;
+            $this->editingWalletId = null;
+            $this->dispatch('transaction-saved');
+            $this->dispatch('notify', message: 'Dompet berhasil diperbarui!');
+            return;
         }
 
         DB::transaction(function () use ($user) {
@@ -121,6 +166,27 @@ class Index extends Component
         $this->isCreateModalOpen = false;
         $this->dispatch('transaction-saved');
         $this->dispatch('notify', message: 'Dompet baru berhasil dibuat!');
+    }
+
+    public function deleteWallet(int $walletId): void
+    {
+        $user = Auth::user();
+        if (!$user) {
+            abort(401);
+        }
+
+        $wallet = Wallet::where('user_id', $user->id)
+            ->withCount(['transactions', 'incomingTransfers'])
+            ->findOrFail($walletId);
+
+        if ($wallet->transactions_count > 0 || $wallet->incoming_transfers_count > 0) {
+            $this->dispatch('notify', message: 'Dompet yang memiliki riwayat transaksi tidak dapat dihapus.', type: 'error');
+            return;
+        }
+
+        $wallet->delete();
+        $this->dispatch('transaction-saved');
+        $this->dispatch('notify', message: 'Dompet berhasil dihapus.');
     }
 
     // --- DEPOSIT / TAMBAH SALDO TABUNGAN METHODS ---
@@ -253,7 +319,109 @@ class Index extends Component
         $this->dispatch('notify', message: 'Tabungan berhasil ditambahkan!');
     }
 
-    public function render()
+    // --- TRANSFER / CAIRKAN DANA ANTAR DOMPET ---
+    public function openTransferModal(?int $fromWalletId = null): void
+    {
+        $user = Auth::user();
+        if (!$user) {
+            abort(401);
+        }
+
+        $userWallets = Wallet::where('user_id', $user->id)->get();
+        $source = $fromWalletId
+            ? $userWallets->firstWhere('id', $fromWalletId)
+            : ($userWallets->whereIn('type', ['trip', 'saving'])->first() ?? $userWallets->first());
+
+        $destination = $userWallets->where('id', '!=', $source?->id)->where('type', 'operational')->first()
+            ?? $userWallets->where('id', '!=', $source?->id)->first();
+
+        $this->fromWalletId = $source?->id;
+        $this->toWalletId = $destination?->id;
+        $this->transferAmount = 100000;
+        $this->transferNote = '';
+        $this->resetValidation();
+        $this->isTransferModalOpen = true;
+    }
+
+    public function closeTransferModal(): void
+    {
+        $this->isTransferModalOpen = false;
+    }
+
+    public function saveTransfer(): void
+    {
+        $user = Auth::user();
+        if (!$user) {
+            abort(401);
+        }
+
+        $this->transferAmount = $this->parseNominal($this->transferAmount);
+
+        $this->validate([
+            'fromWalletId' => [
+                'required',
+                Rule::exists('wallets', 'id')->where('user_id', $user->id),
+            ],
+            'toWalletId' => [
+                'required',
+                Rule::exists('wallets', 'id')->where('user_id', $user->id),
+                'different:fromWalletId',
+            ],
+            'transferAmount' => 'required|numeric|min:1000|max:1000000000',
+            'transferNote' => 'nullable|string|max:255',
+        ], [
+            'fromWalletId.required' => 'Pilih dompet asal dana.',
+            'toWalletId.required' => 'Pilih dompet tujuan.',
+            'toWalletId.different' => 'Dompet asal dan tujuan harus berbeda.',
+            'transferAmount.min' => 'Nominal transfer minimal Rp 1.000.',
+        ]);
+
+        DB::transaction(function () use ($user) {
+            $ids = collect([(int) $this->fromWalletId, (int) $this->toWalletId])->sort()->values();
+            $wallets = Wallet::where('user_id', $user->id)
+                ->whereIn('id', $ids)
+                ->orderBy('id')
+                ->lockForUpdate()
+                ->get()
+                ->keyBy('id');
+
+            $fromWallet = $wallets->get((int) $this->fromWalletId);
+            $toWallet = $wallets->get((int) $this->toWalletId);
+
+            if (!$fromWallet || !$toWallet) {
+                throw ValidationException::withMessages([
+                    'fromWalletId' => 'Dompet yang dipilih tidak valid.',
+                ]);
+            }
+
+            if ((float) $fromWallet->current_balance < (float) $this->transferAmount) {
+                throw ValidationException::withMessages([
+                    'transferAmount' => 'Saldo dompet asal tidak mencukupi (tersedia: ' . $fromWallet->formatted_balance . ').',
+                ]);
+            }
+
+            $fromWallet->decrement('current_balance', $this->transferAmount);
+            $toWallet->increment('current_balance', $this->transferAmount);
+
+            Transaction::create([
+                'user_id' => $user->id,
+                'wallet_id' => $fromWallet->id,
+                'destination_wallet_id' => $toWallet->id,
+                'category_id' => null,
+                'type' => 'transfer',
+                'amount' => $this->transferAmount,
+                'title' => 'Transfer ' . $fromWallet->name . ' ke ' . $toWallet->name,
+                'note' => $this->transferNote ?: 'Pemindahan saldo antar dompet',
+                'transaction_date' => Carbon::now(),
+            ]);
+        });
+
+        $this->isTransferModalOpen = false;
+        $this->dispatch('transaction-saved');
+        $this->dispatch('notify', message: 'Transfer saldo antar dompet berhasil!');
+    }
+
+    public function render(): \Illuminate\Contracts\View\View
     {
         $user = Auth::user();
         $userId = $user?->id;

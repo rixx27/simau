@@ -135,7 +135,8 @@
                     @csrf
                     <button
                         type="submit"
-                        class="w-8 h-8 rounded-lg bg-[#0D0E12] hover:bg-red-500/20 border border-[#262C37] hover:border-red-500/40 text-[#9CA3AF] hover:text-red-400 transition-colors flex items-center justify-center cursor-pointer"
+                        aria-label="Keluar dari akun"
+                        class="w-9 h-9 rounded-lg bg-[#0D0E12] hover:bg-red-500/20 border border-[#262C37] hover:border-red-500/40 text-[#9CA3AF] hover:text-red-400 transition-colors flex items-center justify-center cursor-pointer"
                         title="Keluar / Logout"
                     >
                         <svg class="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke-width="2" stroke="currentColor">
@@ -170,20 +171,23 @@
                 </div>
 
                 <div class="flex items-center gap-2">
-                    <a
-                        href="{{ route('mutasi') }}"
-                        wire:navigate
-                        class="w-9 h-9 rounded-full bg-[#17181E] border border-[#262C37] flex items-center justify-center text-[#9CA3AF] hover:text-white hover:border-[#5865F2]/50 transition-colors"
-                        title="Cari & Filter"
+                    <button
+                        type="button"
+                        x-data
+                        @click="$dispatch('open-global-search')"
+                        aria-label="Cari transaksi, dompet, atau trip"
+                        class="w-11 h-11 rounded-full bg-[#17181E] border border-[#262C37] flex items-center justify-center text-[#9CA3AF] hover:text-white hover:border-[#818CF8]/50 transition-colors cursor-pointer"
+                        title="Pencarian Cepat"
                     >
-                        <svg class="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke-width="2" stroke="currentColor">
+                        <svg class="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke-width="2" stroke="currentColor" aria-hidden="true">
                             <path stroke-linecap="round" stroke-linejoin="round" d="m21 21-5.197-5.197m0 0A7.5 7.5 0 1 0 5.196 5.196a7.5 7.5 0 0 0 10.607 10.607Z" />
                         </svg>
-                    </a>
+                    </button>
                     <a
                         href="{{ route('profile') }}"
                         wire:navigate
-                        class="relative block"
+                        aria-label="Buka profil akun"
+                        class="w-11 h-11 rounded-full flex items-center justify-center"
                         title="Profil"
                     >
                         <img
@@ -198,16 +202,25 @@
             <!-- DESKTOP TOP BAR (>= 768px) -->
             <header class="hidden md:flex items-center justify-between px-8 py-4 bg-[#17181E]/40 border-b border-[#262C37]/50 backdrop-blur-sm sticky top-0 z-20">
                 <div class="flex items-center gap-3">
-                    <span class="text-xs font-semibold px-2.5 py-1 rounded-full bg-[#17181E] border border-[#262C37] text-[#9CA3AF] flex items-center gap-1.5">
-                        <span class="w-2 h-2 rounded-full bg-[#00E676] animate-pulse"></span>
-                        Cloud Ledger Aktif
-                    </span>
                     <span class="text-xs text-[#9CA3AF] font-mono-numbers">
                         {{ \Carbon\Carbon::now()->translatedFormat('l, d F Y') }}
                     </span>
                 </div>
 
                 <div class="flex items-center gap-3">
+                    <button
+                        type="button"
+                        x-data
+                        @keydown.window="if (($event.ctrlKey || $event.metaKey) && $event.key.toLowerCase() === 'k') { $event.preventDefault(); $dispatch('open-global-search'); }"
+                        @click="$dispatch('open-global-search')"
+                        class="inline-flex items-center gap-2 px-3 py-1.5 rounded-lg bg-[#17181E] border border-[#262C37] text-xs font-medium text-[#9CA3AF] hover:text-white hover:border-[#818CF8] transition-colors cursor-pointer"
+                        title="Pencarian Cepat (Ctrl+K)"
+                    >
+                        <svg class="w-3.5 h-3.5 text-[#818CF8]" fill="none" viewBox="0 0 24 24" stroke-width="2" stroke="currentColor" aria-hidden="true">
+                            <path stroke-linecap="round" stroke-linejoin="round" d="m21 21-5.197-5.197m0 0A7.5 7.5 0 1 0 5.196 5.196a7.5 7.5 0 0 0 10.607 10.607Z" />
+                        </svg>
+                        <span>Cari...</span>
+                    </button>
                     <a
                         href="{{ route('export.excel') }}"
                         class="inline-flex items-center gap-2 px-3 py-1.5 rounded-lg bg-[#17181E] border border-[#262C37] text-xs font-medium text-[#9CA3AF] hover:text-white hover:border-[#5865F2] transition-colors"
@@ -262,6 +275,9 @@
     <!-- GLOBAL DAILY LIMIT MODAL -->
     <livewire:wallets.daily-limit-modal />
 
+    <!-- GLOBAL QUICK SEARCH MODAL -->
+    <livewire:search.global-modal />
+
     <!-- GLOBAL TOAST NOTIFICATION -->
     <div
         x-data="{
@@ -282,10 +298,14 @@
         <template x-for="toast in toasts" :key="toast.id">
             <div
                 x-transition
-                class="pointer-events-auto flex items-center justify-between gap-3 px-4 py-3 rounded-2xl bg-[#17181E] border border-[#00E676]/40 text-white shadow-2xl shadow-black/60 text-xs font-semibold"
+                :class="toast.type === 'error' ? 'border-red-500/40' : 'border-[#00E676]/40'"
+                class="pointer-events-auto flex items-center justify-between gap-3 px-4 py-3 rounded-2xl bg-[#17181E] border text-white shadow-2xl shadow-black/60 text-xs font-semibold"
             >
                 <div class="flex items-center gap-2.5 min-w-0">
-                    <span class="w-2.5 h-2.5 rounded-full bg-[#00E676] flex-shrink-0"></span>
+                    <span
+                        :class="toast.type === 'error' ? 'bg-red-400' : 'bg-[#00E676]'"
+                        class="w-2.5 h-2.5 rounded-full flex-shrink-0"
+                    ></span>
                     <span x-text="toast.message" class="truncate"></span>
                 </div>
                 <button

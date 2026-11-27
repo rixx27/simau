@@ -158,6 +158,8 @@ class Edit extends Component
 
         return view('livewire.profile.edit', [
             'user' => $user,
+            'passkeysCount' => $user ? $user->passkeys()->count() : 0,
+            'hasTwoFactor' => (bool) $user?->two_factor_confirmed_at,
         ]);
     }
 }

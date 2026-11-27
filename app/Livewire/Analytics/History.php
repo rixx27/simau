@@ -4,18 +4,30 @@ namespace App\Livewire\Analytics;
 
 use App\Models\Category;
 use App\Models\Transaction;
+use App\Models\Wallet;
+use App\Services\TransactionLedgerService;
 use Carbon\Carbon;
 use Illuminate\Contracts\View\View;
 use Illuminate\Support\Facades\Auth;
+use Illuminate\Validation\ValidationException;
 use Livewire\Attributes\Layout;
 use Livewire\Attributes\On;
 use Livewire\Component;
+use Livewire\WithPagination;
 
 #[Layout('components.layouts.app')]
 class History extends Component
 {
+    use WithPagination;
+
     public string $period = '';
-    public ?int $selectedWeek = 3; // 1, 2, 3, 4 (null for all / this_week)
+    public ?int $selectedWeek = null; // 1, 2, 3, 4 (null for all / this_week)
+    public string $search = '';
+    public string $typeFilter = 'all'; // all, expense, income, transfer
+    public ?int $walletFilter = null;
+    public ?int $categoryFilter = null;
+    public bool $showFilters = false;
+    public bool $showAllCategories = false;
 
     public function mount(): void
     {
@@ -54,6 +66,7 @@ class History extends Component
 
         $this->dispatchChartUpdate();
         $this->dispatch('week-selected', week: $this->selectedWeek);
+        $this->resetPage();
     }
 
     public function selectWeek(?int $week): void
@@ -64,6 +77,66 @@ class History extends Component
 
         $this->selectedWeek = $this->selectedWeek === $week ? null : $week;
         $this->dispatch('week-selected', week: $this->selectedWeek);
+        $this->resetPage();
+    }
+
+    public function updatedSearch(): void
+    {
+        $this->resetPage();
+    }
+
+    public function updatedTypeFilter(): void
+    {
+        $this->resetPage();
+    }
+
+    public function updatedWalletFilter(): void
+    {
+        $this->resetPage();
+    }
+
+    public function updatedCategoryFilter(): void
+    {
+        $this->resetPage();
+    }
+
+    public function toggleFilters(): void
+    {
+        $this->showFilters = !$this->showFilters;
+    }
+
+    public function toggleAllCategories(): void
+    {
+        $this->showAllCategories = !$this->showAllCategories;
+    }
+
+    public function selectCategoryFilter(int $categoryId): void
+    {
+        $this->categoryFilter = $this->categoryFilter === $categoryId ? null : $categoryId;
+        $this->resetPage();
+    }
+
+    public function resetFilters(): void
+    {
+        $this->reset(['search', 'typeFilter', 'walletFilter', 'categoryFilter']);
+        $this->resetPage();
+    }
+
+    public function deleteTransaction(int $transactionId): void
+    {
+        $user = Auth::user();
+        if (!$user) {
+            abort(401);
+        }
+
+        try {
+            app(TransactionLedgerService::class)->deleteTransaction($user, $transactionId);
+            $this->dispatch('transaction-saved');
+            $this->dispatch('notify', message: 'Transaksi berhasil dihapus dan saldo disesuaikan.');
+        } catch (ValidationException $e) {
+            $message = collect($e->errors())->flatten()->first() ?? 'Transaksi tidak dapat dihapus.';
+            $this->dispatch('notify', message: $message, type: 'error');
+        }
     }
 
     #[On('transaction-saved')]
@@ -189,8 +262,8 @@ class History extends Component
             ->orderByDesc('transactions_sum_amount')
             ->get();
 
-        // Recent activity matching period and optional week
-        $activityQuery = Transaction::with(['category', 'wallet'])
+        // Recent activity matching period, week, search, and filters
+        $activityQuery = Transaction::with(['category', 'wallet', 'destinationWallet'])
             ->where('user_id', $userId)
             ->whereBetween('transaction_date', [$startDate, $endDate]);
 
@@ -201,7 +274,31 @@ class History extends Component
                 ->whereDay('transaction_date', '<=', $endDay);
         }
 
-        $activities = $activityQuery->orderBy('transaction_date', 'desc')->get();
+        $trimmedSearch = trim($this->search);
+        if ($trimmedSearch !== '') {
+            $activityQuery->where(function ($q) use ($trimmedSearch) {
+                $q->where('title', 'like', '%' . $trimmedSearch . '%')
+                    ->orWhere('note', 'like', '%' . $trimmedSearch . '%');
+            });
+        }
+
+        if (in_array($this->typeFilter, ['expense', 'income', 'transfer'], true)) {
+            $activityQuery->where('type', $this->typeFilter);
+        }
+
+        if ($this->walletFilter) {
+            $activityQuery->where(function ($q) {
+                $q->where('wallet_id', $this->walletFilter)
+                    ->orWhere('destination_wallet_id', $this->walletFilter);
+            });
+        }
+
+        if ($this->categoryFilter) {
+            $activityQuery->where('category_id', $this->categoryFilter);
+        }
+
+        $activities = $activityQuery->orderBy('transaction_date', 'desc')->paginate(10);
+        $wallets = Wallet::where('user_id', $userId)->get();
 
         $chartData = $this->getChartData();
 
@@ -211,6 +308,7 @@ class History extends Component
             'totalMonthExpense' => $totalMonthExpense,
             'weeklyAverage' => $weeklyAverage,
             'categories' => $categories,
+            'wallets' => $wallets,
             'activities' => $activities,
             'chartData' => $chartData,
         ]);

@@ -1,6 +1,6 @@
-<x-layouts::auth :title="__('Log in')">
+<x-layouts::auth title="Masuk ke SIMAU">
     <div class="flex flex-col gap-6">
-        <x-auth-header :title="__('Log in to your account')" :description="__('Enter your email and password below to log in')" />
+        <x-auth-header title="Masuk ke Akun SIMAU" description="Masukkan email dan kata sandi Anda untuk melanjutkan" />
 
         <!-- Session Status -->
         <x-auth-session-status class="text-center" :status="session('status')" />
@@ -45,15 +45,15 @@
             <flux:checkbox name="remember" label="Ingat saya di perangkat ini" :checked="old('remember')" />
 
             <div class="flex items-center justify-end">
-                <flux:button variant="primary" type="submit" class="w-full bg-[#5865F2] hover:bg-[#4752C4] text-black font-semibold" data-test="login-button">
-                    Masuk ke SIMAU &rarr;
+                <flux:button variant="primary" type="submit" class="w-full bg-[#5865F2] hover:bg-[#4752C4] text-white font-semibold cursor-pointer" data-test="login-button">
+                    Masuk ke SIMAU
                 </flux:button>
             </div>
         </form>
 
         <div class="space-x-1 text-sm text-center rtl:space-x-reverse text-zinc-600 dark:text-zinc-400">
             <span>Belum memiliki akun?</span>
-            <flux:link :href="route('register')" class="text-[#5865F2] font-semibold" wire:navigate>Daftar Akun Baru</flux:link>
+            <flux:link :href="route('register')" class="text-[#818CF8] font-semibold" wire:navigate>Daftar Akun Baru</flux:link>
         </div>
     </div>
 </x-layouts::auth>

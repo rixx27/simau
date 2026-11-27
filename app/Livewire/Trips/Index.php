@@ -15,8 +15,9 @@ class Index extends Component
 {
     public string $statusFilter = 'all'; // all, active, planned, completed
 
-    // Create Modal state
+    // Create / Edit Modal state
     public bool $isCreateModalOpen = false;
+    public ?int $editingTripId = null;
     public string $name = '';
     public string $destination = '';
     public string $startDate = '';
@@ -39,17 +40,39 @@ class Index extends Component
 
     public function openCreateModal(): void
     {
-        $this->reset(['name', 'destination', 'notes']);
+        $this->reset(['editingTripId', 'name', 'destination', 'notes']);
         $this->startDate = Carbon::now()->format('Y-m-d');
         $this->endDate = Carbon::now()->addDays(3)->format('Y-m-d');
         $this->budget = 3000000;
         $this->status = 'planned';
+        $this->resetValidation();
+        $this->isCreateModalOpen = true;
+    }
+
+    public function openEditModal(int $tripId): void
+    {
+        $user = Auth::user();
+        if (!$user) {
+            abort(401);
+        }
+
+        $trip = Trip::where('user_id', $user->id)->findOrFail($tripId);
+        $this->editingTripId = $trip->id;
+        $this->name = $trip->name;
+        $this->destination = $trip->destination;
+        $this->startDate = $trip->start_date->format('Y-m-d');
+        $this->endDate = $trip->end_date->format('Y-m-d');
+        $this->budget = (int) $trip->budget;
+        $this->status = $trip->status;
+        $this->notes = $trip->notes ?? '';
+        $this->resetValidation();
         $this->isCreateModalOpen = true;
     }
 
     public function closeCreateModal(): void
     {
         $this->isCreateModalOpen = false;
+        $this->editingTripId = null;
     }
 
     public function saveTrip(): void
@@ -59,7 +82,7 @@ class Index extends Component
             'destination' => 'required|string|max:100',
             'startDate' => 'required|date',
             'endDate' => 'required|date|after_or_equal:startDate',
-            'budget' => 'required|numeric|min:10000',
+            'budget' => 'required|numeric|min:10000|max:1000000000',
             'status' => 'required|in:planned,active,completed',
             'notes' => 'nullable|string|max:500',
         ], [
@@ -76,6 +99,25 @@ class Index extends Component
             abort(401);
         }
 
+        if ($this->editingTripId) {
+            $trip = Trip::where('user_id', $user->id)->findOrFail($this->editingTripId);
+            $trip->update([
+                'name' => $this->name,
+                'destination' => $this->destination,
+                'start_date' => $this->startDate,
+                'end_date' => $this->endDate,
+                'budget' => $this->budget,
+                'status' => $this->status,
+                'notes' => $this->notes ?: null,
+            ]);
+
+            $this->isCreateModalOpen = false;
+            $this->editingTripId = null;
+            $this->dispatch('transaction-saved');
+            $this->dispatch('notify', message: 'Data trip berhasil diperbarui!');
+            return;
+        }
+
         $user->trips()->create([
             'name' => $this->name,
             'destination' => $this->destination,
@@ -90,6 +132,21 @@ class Index extends Component
         $this->isCreateModalOpen = false;
         $this->dispatch('transaction-saved');
         $this->dispatch('notify', message: 'Rencana trip baru berhasil dibuat!');
+    }
+
+    public function deleteTrip(int $tripId): void
+    {
+        $user = Auth::user();
+        if (!$user) {
+            abort(401);
+        }
+
+        $trip = Trip::where('user_id', $user->id)->findOrFail($tripId);
+        $tripName = $trip->name;
+        $trip->delete();
+
+        $this->dispatch('transaction-saved');
+        $this->dispatch('notify', message: 'Trip "' . $tripName . '" berhasil dihapus.');
     }
 
     public function completeTrip(int $tripId): void

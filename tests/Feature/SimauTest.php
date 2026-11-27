@@ -669,4 +669,199 @@ class SimauTest extends TestCase
         $response->assertStatus(200);
         $response->assertSee('@notify.window', false);
     }
+
+    public function test_can_edit_and_delete_transaction_with_balance_reconciliation()
+    {
+        $user = User::first();
+        $wallet = Wallet::where('user_id', $user->id)->where('type', 'operational')->first();
+        $category = Category::where('name', 'Makanan')->first();
+        $initialBalance = (float) $wallet->current_balance;
+
+        $tx = \App\Models\Transaction::create([
+            'user_id' => $user->id,
+            'wallet_id' => $wallet->id,
+            'category_id' => $category->id,
+            'type' => 'expense',
+            'amount' => 100000,
+            'title' => 'Belanja Awal',
+            'transaction_date' => now(),
+        ]);
+        $wallet->decrement('current_balance', 100000);
+
+        Livewire::actingAs($user)
+            ->test(CreateModal::class)
+            ->call('openEditModal', $tx->id)
+            ->set('amount', 150000)
+            ->set('title', 'Belanja Diubah')
+            ->call('save')
+            ->assertHasNoErrors()
+            ->assertDispatched('transaction-saved');
+
+        $wallet->refresh();
+        $tx->refresh();
+        $this->assertEquals('Belanja Diubah', $tx->title);
+        $this->assertEquals(150000, (float) $tx->amount);
+        $this->assertEquals($initialBalance - 150000, (float) $wallet->current_balance);
+
+        Livewire::actingAs($user)
+            ->test(History::class)
+            ->call('deleteTransaction', $tx->id)
+            ->assertDispatched('transaction-saved');
+
+        $wallet->refresh();
+        $this->assertEquals($initialBalance, (float) $wallet->current_balance);
+        $this->assertDatabaseMissing('transactions', ['id' => $tx->id]);
+    }
+
+    public function test_user_cannot_edit_or_delete_another_users_transaction()
+    {
+        $victim = User::first();
+        $victimTx = \App\Models\Transaction::where('user_id', $victim->id)->where('type', 'expense')->first();
+        $attacker = User::factory()->create();
+
+        Livewire::actingAs($attacker)
+            ->test(History::class)
+            ->call('deleteTransaction', $victimTx->id)
+            ->assertStatus(404);
+
+        Livewire::actingAs($attacker)
+            ->test(CreateModal::class)
+            ->call('openEditModal', $victimTx->id)
+            ->assertStatus(404);
+
+        $this->assertDatabaseHas('transactions', ['id' => $victimTx->id]);
+    }
+
+    public function test_mutasi_search_and_type_filter_work()
+    {
+        $user = User::first();
+
+        Livewire::actingAs($user)
+            ->test(History::class)
+            ->set('selectedWeek', null)
+            ->set('search', 'Dimsum')
+            ->assertSee('Sarapan Bubur')
+            ->assertDontSee('GrabCar ke Stasiun')
+            ->set('search', '')
+            ->set('typeFilter', 'income')
+            ->assertDontSee('GrabCar ke Stasiun');
+    }
+
+    public function test_can_edit_delete_wallet_and_transfer_between_wallets()
+    {
+        $user = User::first();
+        $opWallet = Wallet::where('user_id', $user->id)->where('type', 'operational')->first();
+        $tripWallet = Wallet::where('user_id', $user->id)->where('type', 'trip')->first();
+
+        $opBefore = (float) $opWallet->current_balance;
+        $tripBefore = (float) $tripWallet->current_balance;
+
+        Livewire::actingAs($user)
+            ->test(WalletsIndex::class)
+            ->call('openTransferModal', $tripWallet->id)
+            ->set('fromWalletId', $tripWallet->id)
+            ->set('toWalletId', $opWallet->id)
+            ->set('transferAmount', 200000)
+            ->set('transferNote', 'Cairkan dana ke kas')
+            ->call('saveTransfer')
+            ->assertHasNoErrors()
+            ->assertDispatched('transaction-saved');
+
+        $opWallet->refresh();
+        $tripWallet->refresh();
+        $this->assertEquals($tripBefore - 200000, (float) $tripWallet->current_balance);
+        $this->assertEquals($opBefore + 200000, (float) $opWallet->current_balance);
+
+        // Create empty wallet, edit it, and delete it
+        Livewire::actingAs($user)
+            ->test(WalletsIndex::class)
+            ->call('openCreateModal')
+            ->set('name', 'Dompet Sementara')
+            ->set('type', 'saving')
+            ->set('initialBalance', 0)
+            ->call('saveWallet');
+
+        $emptyWallet = Wallet::where('user_id', $user->id)->where('name', 'Dompet Sementara')->firstOrFail();
+
+        Livewire::actingAs($user)
+            ->test(WalletsIndex::class)
+            ->call('openEditModal', $emptyWallet->id)
+            ->set('name', 'Dompet Diperbarui')
+            ->call('saveWallet');
+
+        $this->assertDatabaseHas('wallets', ['id' => $emptyWallet->id, 'name' => 'Dompet Diperbarui']);
+
+        Livewire::actingAs($user)
+            ->test(WalletsIndex::class)
+            ->call('deleteWallet', $emptyWallet->id);
+
+        $this->assertDatabaseMissing('wallets', ['id' => $emptyWallet->id]);
+    }
+
+    public function test_can_edit_and_delete_trip()
+    {
+        $user = User::first();
+        $trip = Trip::where('user_id', $user->id)->firstOrFail();
+
+        Livewire::actingAs($user)
+            ->test(TripsIndex::class)
+            ->call('openEditModal', $trip->id)
+            ->set('name', 'Trip Jogja Revisi')
+            ->set('budget', 5500000)
+            ->call('saveTrip')
+            ->assertHasNoErrors();
+
+        $trip->refresh();
+        $this->assertEquals('Trip Jogja Revisi', $trip->name);
+        $this->assertEquals(5500000, (int) $trip->budget);
+
+        Livewire::actingAs($user)
+            ->test(TripsIndex::class)
+            ->call('deleteTrip', $trip->id)
+            ->assertDispatched('transaction-saved');
+
+        $this->assertDatabaseMissing('trips', ['id' => $trip->id]);
+    }
+
+    public function test_global_search_modal_searches_only_authenticated_users_records()
+    {
+        $user = User::first();
+        $otherUser = User::factory()->create();
+
+        \App\Models\Transaction::create([
+            'user_id' => $otherUser->id,
+            'wallet_id' => Wallet::where('user_id', $otherUser->id)->firstOrFail()->id,
+            'type' => 'expense',
+            'amount' => 99000,
+            'title' => 'Transaksi Rahasia Orang Lain',
+            'transaction_date' => now(),
+        ]);
+
+        Livewire::actingAs($user)
+            ->test(\App\Livewire\Search\GlobalModal::class)
+            ->call('openModal')
+            ->set('query', 'Dimsum')
+            ->assertSee('Sarapan Bubur')
+            ->set('query', 'Rahasia Orang Lain')
+            ->assertDontSee('Transaksi Rahasia Orang Lain')
+            ->set('query', 'Jogja')
+            ->assertSee('Dompet Liburan Jogja')
+            ->assertSee('Liburan Eksplor Jogja');
+    }
+
+    public function test_dashboard_and_profile_reflect_real_security_status_without_dead_links()
+    {
+        $dash = $this->get('/dashboard');
+        $dash->assertStatus(200);
+        $dash->assertSee('Keamanan Akun SIMAU');
+        $dash->assertSee('Belum ada Passkey atau 2FA');
+        $dash->assertDontSee('Proteksi saldo bank real-time');
+        $dash->assertSee('open-global-search', false);
+
+        $profile = $this->get('/profile');
+        $profile->assertStatus(200);
+        $profile->assertDontSee('href="#"', false);
+        $profile->assertDontSee('secretpassword123');
+        $profile->assertSee('Belum ada Passkey terdaftar');
+    }
 }

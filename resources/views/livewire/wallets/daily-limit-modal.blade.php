@@ -4,6 +4,9 @@
         <div
             x-data
             @keydown.escape.window="$wire.closeModal()"
+            role="dialog"
+            aria-modal="true"
+            aria-label="Atur Batas Pengeluaran Harian"
             class="fixed inset-0 z-50 overflow-y-auto bg-black/80 backdrop-blur-sm flex justify-center items-end md:items-center p-0 md:p-4 transition-all duration-300"
         >
             <!-- Modal Box -->
@@ -35,6 +38,7 @@
                     <button
                         wire:click="closeModal"
                         type="button"
+                        aria-label="Tutup pengaturan batas harian"
                         class="w-8 h-8 rounded-full bg-[#1E2028] border border-[#262C37] flex items-center justify-center text-[#9CA3AF] hover:text-white hover:border-[#5865F2] transition-colors cursor-pointer"
                     >
                         <svg class="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke-width="2.5" stroke="currentColor">
@@ -57,6 +61,9 @@
                         <button
                             type="button"
                             wire:click="toggleEnabled"
+                            role="switch"
+                            aria-checked="{{ $isEnabled ? 'true' : 'false' }}"
+                            aria-label="Aktifkan batas pengeluaran harian"
                             class="relative inline-flex h-6 w-11 flex-shrink-0 cursor-pointer rounded-full border-2 border-transparent transition-colors duration-200 ease-in-out focus:outline-none {{ $isEnabled ? 'bg-[#5865F2]' : 'bg-[#262C37]' }}"
                         >
                             <span
@@ -72,7 +79,7 @@
                                 <span class="text-[11px] font-semibold text-[#9CA3AF] uppercase tracking-wider">
                                     Target Batas per Hari
                                 </span>
-                                <span class="text-[10px] font-bold px-2 py-0.5 rounded bg-[#5865F2]/20 border border-[#5865F2]/40 text-[#5865F2]">
+                                <span class="text-[10px] font-bold px-2 py-0.5 rounded bg-[#5865F2]/20 border border-[#5865F2]/40 text-[#818CF8]">
                                     IDR / HARI
                                 </span>
                             </div>
@@ -93,7 +100,7 @@
                                     $val = (float) $dailyLimit;
                                     $formatted = (floor($val) == $val) ? number_format($val, 0, ',', '.') : number_format($val, 2, ',', '.');
                                 @endphp
-                                <div class="text-center text-[11px] text-[#5865F2] font-mono-numbers pb-1">
+                                <div class="text-center text-[11px] text-[#818CF8] font-mono-numbers pb-1">
                                     Terbaca: Rp {{ $formatted }}
                                 </div>
                             @endif

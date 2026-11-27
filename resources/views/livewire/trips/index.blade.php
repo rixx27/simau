@@ -4,7 +4,7 @@
         <div>
             <h1 class="text-xl sm:text-2xl font-bold text-white tracking-tight flex items-center gap-2">
                 <span>Trip &amp; Perjalanan Liburan</span>
-                <span class="text-xs px-2.5 py-0.5 rounded-full bg-[#5865F2]/20 border border-[#5865F2]/40 text-[#5865F2] font-semibold">
+                <span class="text-xs px-2.5 py-0.5 rounded-full bg-[#5865F2]/20 border border-[#5865F2]/40 text-[#818CF8] font-semibold">
                     Travel Ledger
                 </span>
             </h1>
@@ -300,7 +300,7 @@
                                     wire:click="activateTrip({{ $trip->id }})"
                                     class="flex-1 py-2.5 px-3 rounded-xl bg-[#5865F2]/20 hover:bg-[#5865F2] border border-[#5865F2]/40 text-xs font-semibold text-[#818CF8] hover:text-white transition-all flex items-center justify-center gap-1.5 cursor-pointer"
                                 >
-                                    <span>▶️ Mulai Trip Sekarang</span>
+                                    <span>Mulai Trip</span>
                                 </button>
                                 <a
                                     href="{{ route('trips.report', $trip) }}"
@@ -312,6 +312,25 @@
                                 </a>
                             </div>
                         @endif
+
+                        <!-- Edit & Delete Trip Row -->
+                        <div class="flex items-center justify-end gap-2 mt-2 pt-2 border-t border-[#262C37]/40">
+                            <button
+                                type="button"
+                                wire:click="openEditModal({{ $trip->id }})"
+                                class="px-2.5 py-1 rounded-lg bg-[#0D0E12] hover:bg-[#1E2028] border border-[#262C37] text-[11px] font-medium text-[#9CA3AF] hover:text-white transition-colors cursor-pointer"
+                            >
+                                Edit Trip
+                            </button>
+                            <button
+                                type="button"
+                                wire:click="deleteTrip({{ $trip->id }})"
+                                wire:confirm="Hapus trip '{{ $trip->name }}'? Transaksi terkait tetap aman di riwayat mutasi."
+                                class="px-2.5 py-1 rounded-lg bg-red-500/10 hover:bg-red-500/20 border border-red-500/30 text-[11px] font-medium text-red-400 transition-colors cursor-pointer"
+                            >
+                                Hapus
+                            </button>
+                        </div>
                     </div>
                 </div>
             @endforeach
@@ -323,6 +342,9 @@
         <div
             x-data
             @keydown.escape.window="$wire.closeCreateModal()"
+            role="dialog"
+            aria-modal="true"
+            aria-label="{{ $editingTripId ? 'Edit Rencana Trip' : 'Rencana Liburan atau Trip Baru' }}"
             class="fixed inset-0 z-50 bg-black/80 backdrop-blur-sm flex justify-center items-end md:items-center p-0 md:p-4 transition-all duration-200"
         >
             <div
@@ -338,11 +360,11 @@
                             </svg>
                         </div>
                         <div>
-                            <h3 class="text-base font-bold text-white tracking-tight">Rencana Liburan / Trip Baru</h3>
+                            <h3 class="text-base font-bold text-white tracking-tight">{{ $editingTripId ? 'Edit Rencana Trip' : 'Rencana Liburan / Trip Baru' }}</h3>
                             <p class="text-xs text-[#9CA3AF]">Tentukan destinasi & batas anggaran perjalanan Anda</p>
                         </div>
                     </div>
-                    <button type="button" wire:click="closeCreateModal" class="w-8 h-8 rounded-full bg-[#0D0E12] border border-[#262C37] flex items-center justify-center text-[#9CA3AF] hover:text-white">&times;</button>
+                    <button type="button" wire:click="closeCreateModal" aria-label="Tutup modal trip" class="w-8 h-8 rounded-full bg-[#0D0E12] border border-[#262C37] flex items-center justify-center text-[#9CA3AF] hover:text-white cursor-pointer">&times;</button>
                 </div>
 
                 <!-- Form Body -->
@@ -459,7 +481,7 @@
                             type="submit"
                             class="px-5 py-2.5 rounded-xl bg-gradient-to-r from-[#5865F2] to-[#4F46E5] hover:from-[#4F46E5] hover:to-[#4338CA] text-xs font-semibold text-white shadow-lg shadow-[#5865F2]/25 transition-all cursor-pointer"
                         >
-                            Simpan Rencana Perjalanan &rarr;
+                            {{ $editingTripId ? 'Simpan Perubahan' : 'Simpan Rencana Perjalanan' }}
                         </button>
                     </div>
                 </form>

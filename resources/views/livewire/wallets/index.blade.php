@@ -6,7 +6,18 @@
             <p class="text-xs text-[#9CA3AF]">Kelola pos tabungan, target liburan, dan alokasi simpanan keuangan Anda.</p>
         </div>
 
-        <div class="flex items-center gap-2.5">
+        <div class="flex items-center gap-2.5 flex-wrap">
+            <button
+                type="button"
+                wire:click="openTransferModal"
+                class="inline-flex items-center gap-2 px-3.5 py-2 rounded-xl bg-[#17181E] hover:bg-[#1E2028] border border-[#262C37] hover:border-[#5865F2] text-xs font-semibold text-white transition-all cursor-pointer"
+            >
+                <svg class="w-4 h-4 text-[#818CF8]" fill="none" viewBox="0 0 24 24" stroke-width="2" stroke="currentColor">
+                    <path stroke-linecap="round" stroke-linejoin="round" d="M7.5 21 3 16.5m0 0L7.5 12M3 16.5h13.5m0-13.5L21 7.5m0 0L16.5 12M21 7.5H7.5" />
+                </svg>
+                <span>Transfer / Cairkan</span>
+            </button>
+
             <button
                 type="button"
                 wire:click="openDepositModal"
@@ -143,8 +154,8 @@
                             </div>
                         </div>
 
-                        <!-- Action Button: Open Deposit Modal -->
-                        <div class="pt-3 border-t border-[#262C37]/60 mt-2">
+                        <!-- Action Buttons: Deposit, Transfer/Cairkan, Edit, Delete -->
+                        <div class="pt-3 border-t border-[#262C37]/60 mt-2 space-y-2">
                             <button
                                 type="button"
                                 wire:click="openDepositModal({{ $wallet->id }})"
@@ -153,8 +164,37 @@
                                 <svg class="w-4 h-4 flex-shrink-0" fill="none" viewBox="0 0 24 24" stroke-width="2.5" stroke="currentColor">
                                     <path stroke-linecap="round" stroke-linejoin="round" d="M12 4.5v15m7.5-7.5h-15" />
                                 </svg>
-                                <span> Setor / Tambah Tabungan</span>
+                                <span>Setor / Tambah Tabungan</span>
                             </button>
+
+                            <div class="flex items-center gap-2">
+                                <button
+                                    type="button"
+                                    wire:click="openTransferModal({{ $wallet->id }})"
+                                    class="flex-1 py-1.5 px-2.5 rounded-xl bg-[#0D0E12] hover:bg-[#1E2028] border border-[#262C37] text-[11px] font-medium text-[#9CA3AF] hover:text-white transition-colors cursor-pointer"
+                                >
+                                    Cairkan / Pindah
+                                </button>
+                                <button
+                                    type="button"
+                                    wire:click="openEditModal({{ $wallet->id }})"
+                                    aria-label="Edit dompet {{ $wallet->name }}"
+                                    class="py-1.5 px-2.5 rounded-xl bg-[#0D0E12] hover:bg-[#1E2028] border border-[#262C37] text-[11px] font-medium text-[#9CA3AF] hover:text-white transition-colors cursor-pointer"
+                                >
+                                    Edit
+                                </button>
+                                @if($wallet->transactions_count === 0 && $wallet->incoming_transfers_count === 0)
+                                    <button
+                                        type="button"
+                                        wire:click="deleteWallet({{ $wallet->id }})"
+                                        wire:confirm="Hapus dompet '{{ $wallet->name }}'?"
+                                        aria-label="Hapus dompet {{ $wallet->name }}"
+                                        class="py-1.5 px-2.5 rounded-xl bg-red-500/10 hover:bg-red-500/20 border border-red-500/30 text-[11px] font-medium text-red-400 transition-colors cursor-pointer"
+                                    >
+                                        Hapus
+                                    </button>
+                                @endif
+                            </div>
                         </div>
                     </div>
                 @endforeach
@@ -206,7 +246,7 @@
                                         type="button"
                                         x-data
                                         @click="$dispatch('open-daily-limit-modal', { walletId: {{ $op->id }} })"
-                                        class="inline-flex items-center gap-1 text-[11px] font-semibold text-[#5865F2] hover:text-[#7983F5] transition-colors py-0.5 px-2 rounded-lg bg-[#5865F2]/10 hover:bg-[#5865F2]/20 border border-[#5865F2]/20 cursor-pointer"
+                                        class="inline-flex items-center gap-1 text-[11px] font-semibold text-[#818CF8] hover:text-white transition-colors py-0.5 px-2 rounded-lg bg-[#5865F2]/10 hover:bg-[#5865F2]/20 border border-[#5865F2]/20 cursor-pointer"
                                         title="Atur Batas Pengeluaran Harian"
                                     >
                                         <svg class="w-3 h-3" fill="none" viewBox="0 0 24 24" stroke-width="2" stroke="currentColor">
@@ -218,30 +258,61 @@
                             </div>
                         </div>
 
-                        <div class="pt-3 border-t border-[#262C37]/60 mt-3 grid grid-cols-2 gap-2">
-                            <button
-                                type="button"
-                                x-data
-                                @click="$dispatch('open-transaction-modal', { mode: 'income', walletId: {{ $op->id }} })"
-                                class="py-2.5 px-2 rounded-xl bg-[#00E676]/15 hover:bg-[#00E676] border border-[#00E676]/40 text-xs font-semibold text-[#00E676] hover:text-black transition-all flex items-center justify-center gap-1 cursor-pointer"
-                            >
-                                <svg class="w-3.5 h-3.5" fill="none" viewBox="0 0 24 24" stroke-width="2.5" stroke="currentColor">
-                                    <path stroke-linecap="round" stroke-linejoin="round" d="M12 4.5v15m7.5-7.5h-15" />
-                                </svg>
-                                <span> Tambah Kas</span>
-                            </button>
+                        <div class="pt-3 border-t border-[#262C37]/60 mt-3 space-y-2">
+                            <div class="grid grid-cols-2 gap-2">
+                                <button
+                                    type="button"
+                                    x-data
+                                    @click="$dispatch('open-transaction-modal', { mode: 'income', walletId: {{ $op->id }} })"
+                                    class="py-2.5 px-2 rounded-xl bg-[#00E676]/15 hover:bg-[#00E676] border border-[#00E676]/40 text-xs font-semibold text-[#00E676] hover:text-black transition-all flex items-center justify-center gap-1 cursor-pointer"
+                                >
+                                    <svg class="w-3.5 h-3.5" fill="none" viewBox="0 0 24 24" stroke-width="2.5" stroke="currentColor">
+                                        <path stroke-linecap="round" stroke-linejoin="round" d="M12 4.5v15m7.5-7.5h-15" />
+                                    </svg>
+                                    <span>Tambah Kas</span>
+                                </button>
 
-                            <button
-                                type="button"
-                                x-data
-                                @click="$dispatch('open-transaction-modal', { mode: 'daily', walletId: {{ $op->id }} })"
-                                class="py-2.5 px-2 rounded-xl bg-[#0D0E12] hover:bg-[#5865F2] border border-[#262C37] hover:border-[#5865F2] text-xs font-semibold text-white transition-all flex items-center justify-center gap-1 cursor-pointer"
-                            >
-                                <svg class="w-3.5 h-3.5" fill="none" viewBox="0 0 24 24" stroke-width="2.5" stroke="currentColor">
-                                    <path stroke-linecap="round" stroke-linejoin="round" d="M5 12h14" />
-                                </svg>
-                                <span>Pengeluaran</span>
-                            </button>
+                                <button
+                                    type="button"
+                                    x-data
+                                    @click="$dispatch('open-transaction-modal', { mode: 'daily', walletId: {{ $op->id }} })"
+                                    class="py-2.5 px-2 rounded-xl bg-[#0D0E12] hover:bg-[#5865F2] border border-[#262C37] hover:border-[#5865F2] text-xs font-semibold text-white transition-all flex items-center justify-center gap-1 cursor-pointer"
+                                >
+                                    <svg class="w-3.5 h-3.5" fill="none" viewBox="0 0 24 24" stroke-width="2.5" stroke="currentColor">
+                                        <path stroke-linecap="round" stroke-linejoin="round" d="M5 12h14" />
+                                    </svg>
+                                    <span>Pengeluaran</span>
+                                </button>
+                            </div>
+
+                            <div class="flex items-center gap-2">
+                                <button
+                                    type="button"
+                                    wire:click="openTransferModal({{ $op->id }})"
+                                    class="flex-1 py-1.5 px-2.5 rounded-xl bg-[#0D0E12] hover:bg-[#1E2028] border border-[#262C37] text-[11px] font-medium text-[#9CA3AF] hover:text-white transition-colors cursor-pointer"
+                                >
+                                    Transfer
+                                </button>
+                                <button
+                                    type="button"
+                                    wire:click="openEditModal({{ $op->id }})"
+                                    aria-label="Edit rekening {{ $op->name }}"
+                                    class="py-1.5 px-2.5 rounded-xl bg-[#0D0E12] hover:bg-[#1E2028] border border-[#262C37] text-[11px] font-medium text-[#9CA3AF] hover:text-white transition-colors cursor-pointer"
+                                >
+                                    Edit
+                                </button>
+                                @if($op->transactions_count === 0 && $op->incoming_transfers_count === 0)
+                                    <button
+                                        type="button"
+                                        wire:click="deleteWallet({{ $op->id }})"
+                                        wire:confirm="Hapus rekening '{{ $op->name }}'?"
+                                        aria-label="Hapus rekening {{ $op->name }}"
+                                        class="py-1.5 px-2.5 rounded-xl bg-red-500/10 hover:bg-red-500/20 border border-red-500/30 text-[11px] font-medium text-red-400 transition-colors cursor-pointer"
+                                    >
+                                        Hapus
+                                    </button>
+                                @endif
+                            </div>
                         </div>
                     </div>
                 @endforeach
@@ -254,6 +325,9 @@
         <div
             x-data
             @keydown.escape.window="$wire.closeDepositModal()"
+            role="dialog"
+            aria-modal="true"
+            aria-label="Setor atau Tambah Tabungan"
             class="fixed inset-0 z-50 bg-black/80 backdrop-blur-sm flex justify-center items-end md:items-center p-0 md:p-4 transition-all duration-200"
         >
             <div
@@ -275,7 +349,7 @@
                             </p>
                         </div>
                     </div>
-                    <button type="button" wire:click="closeDepositModal" class="w-8 h-8 flex items-center justify-center text-[#9CA3AF] hover:text-white">&times;</button>
+                    <button type="button" wire:click="closeDepositModal" aria-label="Tutup modal setor tabungan" class="w-8 h-8 flex items-center justify-center text-[#9CA3AF] hover:text-white cursor-pointer">&times;</button>
                 </div>
 
                 <!-- Body -->
@@ -439,10 +513,13 @@
                     <button
                         type="button"
                         wire:click="saveDeposit"
-                        class="px-5 py-2.5 rounded-xl bg-gradient-to-r from-[#00E676] to-[#10B981] hover:from-[#10B981] hover:to-[#059669] text-xs font-bold text-black shadow-lg shadow-[#00E676]/30 active:scale-[0.98] transition-all cursor-pointer flex items-center gap-1.5"
+                        wire:loading.attr="disabled"
+                        wire:target="saveDeposit"
+                        class="px-5 py-2.5 rounded-xl bg-gradient-to-r from-[#00E676] to-[#10B981] hover:from-[#10B981] hover:to-[#059669] text-xs font-bold text-black shadow-lg shadow-[#00E676]/30 active:scale-[0.98] transition-all cursor-pointer flex items-center gap-1.5 disabled:opacity-60"
                     >
-                        <span>Simpan Tabungan</span>
-                        <svg class="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke-width="2.5" stroke="currentColor">
+                        <span wire:loading.remove wire:target="saveDeposit">Simpan Tabungan</span>
+                        <span wire:loading wire:target="saveDeposit">Menyimpan...</span>
+                        <svg wire:loading.remove wire:target="saveDeposit" class="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke-width="2.5" stroke="currentColor" aria-hidden="true">
                             <path stroke-linecap="round" stroke-linejoin="round" d="m4.5 12.75 6 6 9-13.5" />
                         </svg>
                     </button>
@@ -451,11 +528,14 @@
         </div>
     @endif
 
-    <!-- MODAL CREATE WALLET -->
+    <!-- MODAL CREATE / EDIT WALLET -->
     @if($isCreateModalOpen)
         <div
             x-data
             @keydown.escape.window="$wire.closeCreateModal()"
+            role="dialog"
+            aria-modal="true"
+            aria-label="{{ $editingWalletId ? 'Edit Dompet' : 'Buat Target Dompet Baru' }}"
             class="fixed inset-0 z-50 bg-black/80 backdrop-blur-sm flex justify-center items-center p-4"
         >
             <div
@@ -463,8 +543,8 @@
                 class="bg-[#17181E] border border-[#262C37] w-full max-w-md rounded-3xl shadow-2xl p-6 space-y-4"
             >
                 <div class="flex items-center justify-between border-b border-[#262C37]/60 pb-3">
-                    <h3 class="text-base font-bold text-white">Buat Target Dompet Baru</h3>
-                    <button type="button" wire:click="closeCreateModal" class="text-[#9CA3AF] hover:text-white">&times;</button>
+                    <h3 class="text-base font-bold text-white">{{ $editingWalletId ? 'Edit Dompet / Target' : 'Buat Target Dompet Baru' }}</h3>
+                    <button type="button" wire:click="closeCreateModal" aria-label="Tutup modal dompet" class="text-[#9CA3AF] hover:text-white cursor-pointer">&times;</button>
                 </div>
 
                 <div class="space-y-3">
@@ -493,8 +573,9 @@
                         <div>
                             <label class="block text-xs font-semibold text-white mb-1">Tipe Dompet</label>
                             <select
-                                wire:model="type"
-                                class="w-full bg-[#0D0E12] border border-[#262C37] rounded-xl px-3 py-2 text-xs text-white focus:outline-none focus:border-[#5865F2]"
+                                wire:model.live="type"
+                                @if($editingWalletId) disabled @endif
+                                class="w-full bg-[#0D0E12] border border-[#262C37] rounded-xl px-3 py-2 text-xs text-white focus:outline-none focus:border-[#5865F2] disabled:opacity-60"
                             >
                                 <option value="trip">Pundi Liburan (Trip)</option>
                                 <option value="saving">Tabungan (Saving)</option>
@@ -502,31 +583,35 @@
                             </select>
                         </div>
 
-                        <div>
-                            <label class="block text-xs font-semibold text-white mb-1">Target Nominal (Rp)</label>
-                            <input
-                                type="number"
-                                wire:model="targetAmount"
-                                step="any"
-                                min="0"
-                                placeholder="5000000"
-                                class="w-full bg-[#0D0E12] border border-[#262C37] rounded-xl px-3 py-2 text-xs text-white focus:outline-none focus:border-[#5865F2]"
-                            />
-                        </div>
+                        @if($type !== 'operational')
+                            <div>
+                                <label class="block text-xs font-semibold text-white mb-1">Target Nominal (Rp)</label>
+                                <input
+                                    type="number"
+                                    wire:model="targetAmount"
+                                    step="any"
+                                    min="0"
+                                    placeholder="5000000"
+                                    class="w-full bg-[#0D0E12] border border-[#262C37] rounded-xl px-3 py-2 text-xs text-white focus:outline-none focus:border-[#5865F2]"
+                                />
+                            </div>
+                        @endif
                     </div>
 
                     <div class="grid grid-cols-2 gap-3">
-                        <div>
-                            <label class="block text-xs font-semibold text-white mb-1">Saldo Awal (Rp)</label>
-                            <input
-                                type="number"
-                                wire:model="initialBalance"
-                                step="any"
-                                min="0"
-                                placeholder="0"
-                                class="w-full bg-[#0D0E12] border border-[#262C37] rounded-xl px-3 py-2 text-xs text-white focus:outline-none focus:border-[#5865F2]"
-                            />
-                        </div>
+                        @if(!$editingWalletId)
+                            <div>
+                                <label class="block text-xs font-semibold text-white mb-1">Saldo Awal (Rp)</label>
+                                <input
+                                    type="number"
+                                    wire:model="initialBalance"
+                                    step="any"
+                                    min="0"
+                                    placeholder="0"
+                                    class="w-full bg-[#0D0E12] border border-[#262C37] rounded-xl px-3 py-2 text-xs text-white focus:outline-none focus:border-[#5865F2]"
+                                />
+                            </div>
+                        @endif
 
                         @if($type === 'operational')
                             <div>
@@ -548,16 +633,108 @@
                     <button
                         type="button"
                         wire:click="closeCreateModal"
-                        class="px-4 py-2 rounded-xl bg-[#0D0E12] border border-[#262C37] text-xs font-semibold text-[#9CA3AF] hover:text-white"
+                        class="px-4 py-2 rounded-xl bg-[#0D0E12] border border-[#262C37] text-xs font-semibold text-[#9CA3AF] hover:text-white cursor-pointer"
                     >
                         Batal
                     </button>
                     <button
                         type="button"
                         wire:click="saveWallet"
-                        class="px-4 py-2 rounded-xl bg-[#5865F2] hover:bg-[#4752C4] text-xs font-semibold text-white shadow-md shadow-[#5865F2]/25"
+                        class="px-4 py-2 rounded-xl bg-[#5865F2] hover:bg-[#4752C4] text-xs font-semibold text-white shadow-md shadow-[#5865F2]/25 cursor-pointer"
                     >
-                        Simpan Dompet
+                        {{ $editingWalletId ? 'Simpan Perubahan' : 'Simpan Dompet' }}
+                    </button>
+                </div>
+            </div>
+        </div>
+    @endif
+
+    <!-- MODAL TRANSFER / CAIRKAN DANA ANTAR DOMPET -->
+    @if($isTransferModalOpen)
+        <div
+            x-data
+            @keydown.escape.window="$wire.closeTransferModal()"
+            role="dialog"
+            aria-modal="true"
+            aria-label="Transfer atau Cairkan Dana"
+            class="fixed inset-0 z-50 bg-black/80 backdrop-blur-sm flex justify-center items-center p-4"
+        >
+            <div
+                @click.outside="$wire.closeTransferModal()"
+                class="bg-[#17181E] border border-[#262C37] w-full max-w-md rounded-3xl shadow-2xl p-6 space-y-4"
+            >
+                <div class="flex items-center justify-between border-b border-[#262C37]/60 pb-3">
+                    <div>
+                        <h3 class="text-base font-bold text-white">Transfer / Cairkan Dana</h3>
+                        <p class="text-[11px] text-[#9CA3AF]">Pindahkan saldo antar dompet operasional maupun tabungan</p>
+                    </div>
+                    <button type="button" wire:click="closeTransferModal" aria-label="Tutup modal transfer" class="text-[#9CA3AF] hover:text-white cursor-pointer">&times;</button>
+                </div>
+
+                <div class="space-y-3">
+                    <div>
+                        <label class="block text-xs font-semibold text-white mb-1">Dari Dompet</label>
+                        <select
+                            wire:model.live="fromWalletId"
+                            class="w-full bg-[#0D0E12] border border-[#262C37] rounded-xl p-2.5 text-xs text-white focus:outline-none focus:border-[#5865F2]"
+                        >
+                            @foreach($wallets as $w)
+                                <option value="{{ $w->id }}">{{ $w->name }} ({{ $w->formatted_balance }})</option>
+                            @endforeach
+                        </select>
+                        @error('fromWalletId') <p class="text-xs text-red-400 mt-1">{{ $message }}</p> @enderror
+                    </div>
+
+                    <div>
+                        <label class="block text-xs font-semibold text-white mb-1">Ke Dompet Tujuan</label>
+                        <select
+                            wire:model.live="toWalletId"
+                            class="w-full bg-[#0D0E12] border border-[#262C37] rounded-xl p-2.5 text-xs text-white focus:outline-none focus:border-[#5865F2]"
+                        >
+                            @foreach($wallets as $w)
+                                <option value="{{ $w->id }}">{{ $w->name }} ({{ $w->formatted_balance }})</option>
+                            @endforeach
+                        </select>
+                        @error('toWalletId') <p class="text-xs text-red-400 mt-1">{{ $message }}</p> @enderror
+                    </div>
+
+                    <div>
+                        <label class="block text-xs font-semibold text-white mb-1">Nominal (Rp)</label>
+                        <input
+                            type="number"
+                            wire:model="transferAmount"
+                            step="any"
+                            min="1000"
+                            class="w-full bg-[#0D0E12] border border-[#262C37] rounded-xl px-3 py-2 text-sm font-bold text-white font-mono-numbers focus:outline-none focus:border-[#5865F2]"
+                        />
+                        @error('transferAmount') <p class="text-xs text-red-400 mt-1">{{ $message }}</p> @enderror
+                    </div>
+
+                    <div>
+                        <label class="block text-xs font-semibold text-white mb-1">Catatan (Opsional)</label>
+                        <input
+                            type="text"
+                            wire:model="transferNote"
+                            placeholder="Contoh: Cairkan tabungan untuk bayar tiket"
+                            class="w-full bg-[#0D0E12] border border-[#262C37] rounded-xl px-3 py-2 text-xs text-white focus:outline-none focus:border-[#5865F2]"
+                        />
+                    </div>
+                </div>
+
+                <div class="pt-3 border-t border-[#262C37]/60 flex items-center justify-end gap-2">
+                    <button
+                        type="button"
+                        wire:click="closeTransferModal"
+                        class="px-4 py-2 rounded-xl bg-[#0D0E12] border border-[#262C37] text-xs font-semibold text-[#9CA3AF] hover:text-white cursor-pointer"
+                    >
+                        Batal
+                    </button>
+                    <button
+                        type="button"
+                        wire:click="saveTransfer"
+                        class="px-4 py-2 rounded-xl bg-[#5865F2] hover:bg-[#4752C4] text-xs font-semibold text-white shadow-md shadow-[#5865F2]/25 cursor-pointer"
+                    >
+                        Proses Transfer
                     </button>
                 </div>
             </div>

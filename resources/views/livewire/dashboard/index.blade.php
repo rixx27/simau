@@ -74,6 +74,7 @@
                         <button
                             type="button"
                             wire:click="toggleBalance"
+                            aria-label="{{ $showBalance ? 'Sembunyikan saldo' : 'Tampilkan saldo' }}"
                             class="hover:text-white transition-colors cursor-pointer"
                             title="{{ $showBalance ? 'Sembunyikan Saldo' : 'Tampilkan Saldo' }}"
                         >
@@ -210,9 +211,9 @@
                         <div class="w-full h-1.5 bg-[#262C37] rounded-full overflow-hidden mb-1.5">
                             <div class="h-full {{ $dailyPercentRemaining <= 0 ? 'bg-red-500' : ($dailyPercentRemaining <= 20 ? 'bg-amber-400' : 'bg-gradient-to-r from-blue-500 to-[#5865F2]') }} rounded-full" style="width: {{ $dailyPercentRemaining }}%"></div>
                         </div>
-                        <span class="text-[11px] text-[#9CA3AF] font-medium group-hover:text-[#5865F2] transition-colors">
+                        <span class="text-[11px] text-[#9CA3AF] font-medium group-hover:text-[#818CF8] transition-colors">
                             @if($dailyLimit)
-                                Tersisa {{ $dailyPercentRemaining }}% &bull; <span class="underline underline-offset-2">Ubah</span>
+                                Tersisa {{ $dailyPercentRemaining }}% &bull; <span class="underline underline-offset-2 text-[#818CF8]">Ubah</span>
                             @else
                                 Klik untuk atur batas
                             @endif
@@ -249,24 +250,37 @@
                 </a>
             </div>
 
-            <!-- 3. SECURITY BANNER (Enkripsi Biometrik Aktif) -->
-            <div class="bg-[#17181E] border border-[#262C37] rounded-3xl p-4 flex items-center justify-between">
-                <div class="flex items-center gap-3">
-                    <div class="w-10 h-10 rounded-2xl bg-[#00E676]/10 border border-[#00E676]/30 flex items-center justify-center text-[#00E676]">
-                        <svg class="w-5 h-5" fill="none" viewBox="0 0 24 24" stroke-width="2" stroke="currentColor">
+            <!-- 3. ACCOUNT SECURITY STATUS CARD -->
+            @php
+                $securityActive = $passkeysCount > 0 || $hasTwoFactor;
+                $securityLabel = match (true) {
+                    $passkeysCount > 0 && $hasTwoFactor => "Passkey ({$passkeysCount}) & 2FA Aktif",
+                    $passkeysCount > 0 => "Passkey Aktif ({$passkeysCount} perangkat)",
+                    $hasTwoFactor => 'Autentikasi 2 Faktor (2FA) Aktif',
+                    default => 'Belum ada Passkey atau 2FA',
+                };
+            @endphp
+            <a
+                href="{{ route('security.edit') }}"
+                wire:navigate
+                class="bg-[#17181E] border border-[#262C37] hover:border-[#818CF8]/50 rounded-3xl p-4 flex items-center justify-between transition-colors group"
+            >
+                <div class="flex items-center gap-3 min-w-0">
+                    <div class="w-10 h-10 rounded-2xl {{ $securityActive ? 'bg-[#00E676]/10 border-[#00E676]/30 text-[#00E676]' : 'bg-amber-500/10 border-amber-500/30 text-amber-400' }} border flex items-center justify-center flex-shrink-0">
+                        <svg class="w-5 h-5" fill="none" viewBox="0 0 24 24" stroke-width="2" stroke="currentColor" aria-hidden="true">
                             <path stroke-linecap="round" stroke-linejoin="round" d="M9 12.75 11.25 15 15 9.75m-3-7.036A11.959 11.959 0 0 1 3.598 6 11.99 11.99 0 0 0 3 9.749c0 5.592 3.824 10.29 9 11.623 5.176-1.332 9-6.03 9-11.622 0-1.31-.21-2.571-.598-3.751h-.152c-3.196 0-6.1-1.248-8.25-3.285Z" />
                         </svg>
                     </div>
-                    <div>
-                        <h4 class="text-xs font-bold text-white">Enkripsi Biometrik Aktif</h4>
-                        <p class="text-[11px] text-[#9CA3AF]">Proteksi saldo bank real-time</p>
+                    <div class="min-w-0">
+                        <h4 class="text-xs font-bold text-white group-hover:text-[#818CF8] transition-colors">Keamanan Akun SIMAU</h4>
+                        <p class="text-[11px] text-[#9CA3AF] truncate">{{ $securityLabel }}</p>
                     </div>
                 </div>
 
-                <span class="px-2.5 py-1 rounded-full bg-[#00E676]/15 border border-[#00E676]/30 text-[#00E676] text-[11px] font-semibold">
-                    Aman
+                <span class="px-2.5 py-1 rounded-full text-[11px] font-semibold flex-shrink-0 {{ $securityActive ? 'bg-[#00E676]/15 border border-[#00E676]/30 text-[#00E676]' : 'bg-amber-500/15 border border-amber-500/30 text-amber-300' }}">
+                    {{ $securityActive ? 'Aktif' : 'Atur' }}
                 </span>
-            </div>
+            </a>
         </div>
 
         <!-- RIGHT COLUMN (Transaksi Terbaru) -->
@@ -276,18 +290,13 @@
                 <div class="flex items-center justify-between mb-5">
                     <div class="flex items-center gap-2">
                         <h3 class="text-base font-bold text-white">Transaksi Terbaru</h3>
-                        <span class="text-[11px] font-semibold px-2 py-0.5 rounded-full bg-[#262C37] text-[#9CA3AF]">Hari ini</span>
+                        <span class="text-[11px] font-semibold px-2 py-0.5 rounded-full bg-[#262C37] text-[#9CA3AF]">8 Terakhir</span>
                     </div>
 
                     <div class="flex items-center gap-3">
-                        <a href="{{ route('mutasi') }}" wire:navigate class="text-xs font-semibold text-[#5865F2] hover:text-[#4752C4] transition-colors">
+                        <a href="{{ route('mutasi') }}" wire:navigate class="text-xs font-semibold text-[#818CF8] hover:text-white transition-colors">
                             Lihat Semua
                         </a>
-                        <button type="button" class="text-[#9CA3AF] hover:text-white" title="Menu Opsi">
-                            <svg class="w-5 h-5" fill="none" viewBox="0 0 24 24" stroke-width="2" stroke="currentColor">
-                                <path stroke-linecap="round" stroke-linejoin="round" d="M6.75 12a.75.75 0 1 1-1.5 0 .75.75 0 0 1 1.5 0ZM12.75 12a.75.75 0 1 1-1.5 0 .75.75 0 0 1 1.5 0ZM18.75 12a.75.75 0 1 1-1.5 0 .75.75 0 0 1 1.5 0Z" />
-                            </svg>
-                        </button>
                     </div>
                 </div>
 
@@ -352,11 +361,28 @@
                                 </div>
                             </div>
 
-                            <div class="text-right flex-shrink-0 ml-3">
-                                <span class="text-sm font-bold font-mono-numbers block {{ $isExpense ? 'text-white' : 'text-[#00E676]' }}">
-                                    {{ $tx->formatted_amount }}
-                                </span>
-                                <span class="text-[11px] text-[#9CA3AF]">Berhasil</span>
+                            <div class="flex items-center gap-2.5 flex-shrink-0 ml-3">
+                                <div class="text-right">
+                                    <span class="text-sm font-bold font-mono-numbers block {{ $isExpense ? 'text-white' : 'text-[#00E676]' }}">
+                                        {{ $tx->formatted_amount }}
+                                    </span>
+                                    <span class="text-[11px] text-[#9CA3AF]">Berhasil</span>
+                                </div>
+
+                                @if($tx->type !== 'transfer')
+                                    <button
+                                        type="button"
+                                        x-data
+                                        @click="$dispatch('open-edit-transaction-modal', { transactionId: {{ $tx->id }} })"
+                                        aria-label="Edit transaksi {{ $tx->title }}"
+                                        title="Edit transaksi"
+                                        class="w-8 h-8 rounded-lg bg-[#17181E] border border-[#262C37] text-[#9CA3AF] hover:text-white hover:border-[#5865F2] flex items-center justify-center transition-colors cursor-pointer"
+                                    >
+                                        <svg class="w-3.5 h-3.5" fill="none" viewBox="0 0 24 24" stroke-width="2" stroke="currentColor">
+                                            <path stroke-linecap="round" stroke-linejoin="round" d="m16.862 4.487 1.687-1.688a1.875 1.875 0 1 1 2.652 2.652L10.582 16.07a4.5 4.5 0 0 1-1.897 1.13L6 18l.8-2.685a4.5 4.5 0 0 1 1.13-1.897l8.932-8.931Z" />
+                                        </svg>
+                                    </button>
+                                @endif
                             </div>
                         </div>
                     @empty

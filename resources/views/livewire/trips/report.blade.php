@@ -325,10 +325,24 @@
                                     </div>
                                 </div>
 
-                                <div class="text-right flex-shrink-0">
-                                    <span class="text-xs sm:text-sm font-extrabold text-white font-mono-numbers block">
-                                        {{ $tx->formatted_amount }}
-                                    </span>
+                                <div class="flex items-center gap-2 flex-shrink-0">
+                                    <div class="text-right">
+                                        <span class="text-xs sm:text-sm font-extrabold text-white font-mono-numbers block">
+                                            {{ $tx->formatted_amount }}
+                                        </span>
+                                    </div>
+                                    <button
+                                        type="button"
+                                        x-data
+                                        @click="$dispatch('open-edit-transaction-modal', { transactionId: {{ $tx->id }} })"
+                                        aria-label="Edit transaksi {{ $tx->title }}"
+                                        title="Edit transaksi"
+                                        class="w-7 h-7 rounded-lg bg-[#17181E] border border-[#262C37] text-[#9CA3AF] hover:text-white hover:border-[#5865F2] flex items-center justify-center transition-colors cursor-pointer"
+                                    >
+                                        <svg class="w-3.5 h-3.5" fill="none" viewBox="0 0 24 24" stroke-width="2" stroke="currentColor">
+                                            <path stroke-linecap="round" stroke-linejoin="round" d="m16.862 4.487 1.687-1.688a1.875 1.875 0 1 1 2.652 2.652L10.582 16.07a4.5 4.5 0 0 1-1.897 1.13L6 18l.8-2.685a4.5 4.5 0 0 1 1.13-1.897l8.932-8.931Z" />
+                                        </svg>
+                                    </button>
                                 </div>
                             </div>
                         @endforeach

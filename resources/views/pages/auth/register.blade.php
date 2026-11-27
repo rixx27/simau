@@ -63,15 +63,15 @@
             </div>
 
             <div class="flex items-center justify-end">
-                <flux:button type="submit" variant="primary" class="w-full bg-[#5865F2] hover:bg-[#4752C4] text-black font-semibold py-2.5" data-test="register-user-button">
-                    Buat Akun Sekarang &rarr;
+                <flux:button type="submit" variant="primary" class="w-full bg-[#5865F2] hover:bg-[#4752C4] text-white font-semibold py-2.5 cursor-pointer" data-test="register-user-button">
+                    Buat Akun Sekarang
                 </flux:button>
             </div>
         </form>
 
         <div class="space-x-1 rtl:space-x-reverse text-center text-sm text-zinc-600 dark:text-zinc-400">
             <span>Sudah memiliki akun?</span>
-            <flux:link :href="route('login')" class="text-[#5865F2] font-semibold" wire:navigate>Masuk di sini</flux:link>
+            <flux:link :href="route('login')" class="text-[#818CF8] font-semibold" wire:navigate>Masuk di sini</flux:link>
         </div>
     </div>
 </x-layouts::auth>

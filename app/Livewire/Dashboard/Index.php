@@ -113,6 +113,9 @@ class Index extends Component
             ->take(8)
             ->get();
 
+        $passkeysCount = $user ? $user->passkeys()->count() : 0;
+        $hasTwoFactor = (bool) $user?->two_factor_confirmed_at;
+
         return view('livewire.dashboard.index', [
             'user' => $user,
             'totalBalance' => $totalBalance,
@@ -129,6 +132,8 @@ class Index extends Component
             'formattedTripShort' => $formattedTripShort,
             'recentTransactions' => $recentTransactions,
             'referenceDate' => $referenceDate,
+            'passkeysCount' => $passkeysCount,
+            'hasTwoFactor' => $hasTwoFactor,
         ]);
     }
 }
