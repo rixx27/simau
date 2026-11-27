@@ -18,9 +18,9 @@ COPY --from=composer-builder /app/vendor ./vendor
 RUN npm run build
 
 # ==========================================
-# Tahap 2: Runtime PHP 8.3 Apache Production
+# Tahap 3: Runtime PHP 8.4 Apache Production
 # ==========================================
-FROM php:8.3-apache
+FROM php:8.4-apache
 
 # Instal dependensi sistem dan ekstensi PHP yang diperlukan Laravel & Maatwebsite Excel
 RUN apt-get update && apt-get install -y --no-install-recommends \
