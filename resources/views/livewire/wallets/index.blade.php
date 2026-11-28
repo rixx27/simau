@@ -7,27 +7,6 @@
         </div>
 
         <div class="flex items-center gap-2.5 flex-wrap">
-            <button
-                type="button"
-                wire:click="openTransferModal"
-                class="inline-flex items-center gap-2 px-3.5 py-2 rounded-xl bg-[#17181E] hover:bg-[#1E2028] border border-[#262C37] hover:border-[#5865F2] text-xs font-semibold text-white transition-all cursor-pointer"
-            >
-                <svg class="w-4 h-4 text-[#818CF8]" fill="none" viewBox="0 0 24 24" stroke-width="2" stroke="currentColor">
-                    <path stroke-linecap="round" stroke-linejoin="round" d="M7.5 21 3 16.5m0 0L7.5 12M3 16.5h13.5m0-13.5L21 7.5m0 0L16.5 12M21 7.5H7.5" />
-                </svg>
-                <span>Transfer / Cairkan</span>
-            </button>
-
-            <button
-                type="button"
-                wire:click="openDepositModal"
-                class="inline-flex items-center gap-2 px-3.5 py-2 rounded-xl bg-[#00E676]/15 hover:bg-[#00E676]/25 border border-[#00E676]/40 text-xs font-semibold text-[#00E676] transition-all cursor-pointer"
-            >
-                <svg class="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke-width="2.5" stroke="currentColor">
-                    <path stroke-linecap="round" stroke-linejoin="round" d="M12 4.5v15m7.5-7.5h-15" />
-                </svg>
-                <span>Nabung Cepat</span>
-            </button>
 
             <button
                 type="button"

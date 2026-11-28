@@ -4,9 +4,6 @@
         <div>
             <h1 class="text-xl sm:text-2xl font-bold text-white tracking-tight flex items-center gap-2">
                 <span>Trip &amp; Perjalanan Liburan</span>
-                <span class="text-xs px-2.5 py-0.5 rounded-full bg-[#5865F2]/20 border border-[#5865F2]/40 text-[#818CF8] font-semibold">
-                    Travel Ledger
-                </span>
             </h1>
             <p class="text-xs text-[#9CA3AF] mt-0.5">
                 Rencanakan anggaran liburan, pantau pengeluaran perjalanan aktif, dan evaluasi riwayat perjalanan pasca-trip.
