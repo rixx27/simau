@@ -3,12 +3,20 @@
   "framework": null,
   "installCommand": "echo 'Skip npm install'",
   "buildCommand": "echo 'Using prebuilt public/build assets'",
+  "outputDirectory": "public",
   "functions": {
     "api/index.php": {
       "runtime": "vercel-php@0.9.0"
     }
   },
   "routes": [
+    {
+      "src": "^/(index\\.php)?$",
+      "dest": "/api/index.php"
+    },
+    {
+      "handle": "filesystem"
+    },
     {
       "src": "/(build|images|avatars)/(.*)",
       "dest": "/public/$1/$2"
